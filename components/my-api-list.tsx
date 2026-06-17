@@ -3,10 +3,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { Loader2, Search, AlertCircle, RefreshCw, X } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  AlertCircle,
+  CheckCircle2,
+  RefreshCw,
+  X,
+  Play,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 
 interface ApiRow {
   OBJECT_ID?: string;
@@ -19,6 +26,10 @@ interface ApiRow {
   LLM_DESC?: string;
   [k: string]: unknown;
 }
+interface ApiGroup {
+  api: ApiRow;
+  params: Record<string, unknown>;
+}
 
 // My API 목록 SP. SSO 경로라 P_UP_EMAIL 미전송 — 백엔드가 토큰의 SSO_UPN 으로 필터.
 const LIST_REQUEST = {
@@ -27,14 +38,33 @@ const LIST_REQUEST = {
   procedure_name: "SP_GET_API_USER_API_OBJECT_FIELD",
 };
 
-// SP 는 (객체 × 필드) 단위로 행을 주므로 OBJECT_ID 로 묶어 고유 API 만 추린다.
-function groupRows(rows: ApiRow[]): ApiRow[] {
-  const map = new Map<string, ApiRow>();
+// SP 행에서 필드명/샘플값 컬럼명을 유연하게 인식.
+const FIELD_NAME_KEYS = ["FIELD_NAME", "ARGUMENT_NAME", "PARAM_NAME", "COLUMN_NAME"];
+const SAMPLE_KEYS = ["SAMPLE_VALUE", "SAMPLE", "EXAMPLE", "DEFAULT_VALUE"];
+const MAX_ROWS = 200;
+
+function pick(row: ApiRow, keys: string[]): unknown {
+  for (const k of keys) if (row[k] != null && row[k] !== "") return row[k];
+  return undefined;
+}
+
+// (객체 × 필드) 행을 OBJECT_ID 로 묶어 고유 API + params(sample) 로 변환.
+function groupRows(rows: ApiRow[]): ApiGroup[] {
+  const map = new Map<string, ApiGroup>();
   for (const r of rows) {
     const id = r.OBJECT_ID ?? JSON.stringify(r);
-    if (!map.has(id)) map.set(id, r);
+    if (!map.has(id)) map.set(id, { api: r, params: {} });
+    const g = map.get(id)!;
+    const fname = pick(r, FIELD_NAME_KEYS);
+    if (fname) g.params[String(fname)] = pick(r, SAMPLE_KEYS) ?? "";
   }
   return [...map.values()];
+}
+
+function fmtCell(v: unknown): string {
+  if (v == null) return "";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
 }
 
 export function MyApiList() {
@@ -44,13 +74,14 @@ export function MyApiList() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rows, setRows] = useState<ApiRow[] | null>(null);
+  const [groups, setGroups] = useState<ApiGroup[] | null>(null);
   const [q, setQ] = useState("");
+  const [testGroup, setTestGroup] = useState<ApiGroup | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setRows(null);
+    setGroups(null);
     try {
       const res = await fetch("/api/internal", {
         method: "POST",
@@ -63,30 +94,37 @@ export function MyApiList() {
         throw new Error(`HTTP ${res.status}${tx ? `: ${tx.slice(0, 150)}` : ""}`);
       }
       const json = (await res.json()) as { data?: ApiRow[] };
-      setRows(groupRows(Array.isArray(json.data) ? json.data : []));
+      setGroups(groupRows(Array.isArray(json.data) ? json.data : []));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "조회 실패");
+      setError(e instanceof Error ? e.message : t("queryFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const visible = useMemo(() => {
-    if (!rows) return null;
+    if (!groups) return null;
     const n = q.trim().toLowerCase();
-    if (!n) return rows;
-    return rows.filter((r) =>
-      [r.LLM_SYNONYM, r.OBJECT_NM, r.OBJECT_DESC, r.LLM_DESC, r.PACKAGE_NM, r.OWNER]
+    if (!n) return groups;
+    return groups.filter((g) =>
+      [
+        g.api.LLM_SYNONYM,
+        g.api.OBJECT_NM,
+        g.api.OBJECT_DESC,
+        g.api.LLM_DESC,
+        g.api.PACKAGE_NM,
+        g.api.OWNER,
+      ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(n),
     );
-  }, [rows, q]);
+  }, [groups, q]);
 
   return (
     <div>
@@ -96,13 +134,18 @@ export function MyApiList() {
       {/* 툴바 */}
       <div className="mt-5 mb-5 flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2.5 text-sm">
         <span className="text-muted-foreground">
-          {t("account")} <span className="font-medium text-foreground">{email || "…"}</span>
+          {t("account")}{" "}
+          <span className="font-medium text-foreground">{email || "…"}</span>
         </span>
         <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
           {t("ssoAuth")}
         </span>
         <Button size="sm" className="ml-auto" onClick={() => void load()} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
           {t("query")}
         </Button>
       </div>
@@ -117,7 +160,7 @@ export function MyApiList() {
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
           <p className="text-muted-foreground">{error}</p>
         </div>
-      ) : rows && rows.length > 0 ? (
+      ) : groups && groups.length > 0 ? (
         <>
           <div className="mb-4 flex items-center gap-3">
             <div className="relative w-full max-w-sm">
@@ -139,16 +182,17 @@ export function MyApiList() {
               )}
             </div>
             <span className="shrink-0 text-xs text-muted-foreground">
-              {visible!.length === rows.length
-                ? `${rows.length}`
-                : `${visible!.length} / ${rows.length}`}
+              {visible!.length === groups.length
+                ? `${groups.length}`
+                : `${visible!.length} / ${groups.length}`}
             </span>
           </div>
 
           {visible!.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {visible!.map((r, i) => {
-                const title = r.LLM_SYNONYM || r.OBJECT_NM || `(이름 없음 ${i + 1})`;
+              {visible!.map((g, i) => {
+                const r = g.api;
+                const title = r.LLM_SYNONYM || r.OBJECT_NM || t("unnamed", { n: i + 1 });
                 const path = [r.PACKAGE_NM, r.OBJECT_NM].filter(Boolean).join(".");
                 const desc = r.LLM_DESC || r.OBJECT_DESC || "—";
                 return (
@@ -156,13 +200,18 @@ export function MyApiList() {
                     key={r.OBJECT_ID || i}
                     className="flex flex-col rounded-lg border bg-card p-4 text-card-foreground"
                   >
-                    <span className="self-start rounded border px-1.5 py-0.5 text-xs text-muted-foreground">
-                      {r.OBJECT_TP || "PROCEDURE"}
-                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded border px-1.5 py-0.5 text-xs text-muted-foreground">
+                        {r.OBJECT_TP || "PROCEDURE"}
+                      </span>
+                      <Button size="sm" onClick={() => setTestGroup(g)}>
+                        <Play className="h-4 w-4" /> {t("test")}
+                      </Button>
+                    </div>
                     <h3 className="mt-3 text-base font-semibold">{title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
                     <div className="mt-auto pt-3 text-xs text-muted-foreground">
-                      소유자: {r.OWNER || "—"}
+                      {t("owner")}: {r.OWNER || "—"}
                       {path && <code className="mt-1 block truncate">{path}</code>}
                     </div>
                   </div>
@@ -180,6 +229,210 @@ export function MyApiList() {
           {t("empty")}
         </p>
       )}
+
+      {testGroup && (
+        <ApiTester group={testGroup} onClose={() => setTestGroup(null)} />
+      )}
+    </div>
+  );
+}
+
+// ── 카드별 API 테스터(모달) — SSO 전용. params 는 sample 로 자동 채움 ──────────
+function ApiTester({ group, onClose }: { group: ApiGroup; onClose: () => void }) {
+  const t = useTranslations("myApi");
+  const row = group.api;
+  const initialBody = useMemo(
+    () =>
+      JSON.stringify(
+        {
+          user_name: row.OWNER || "API",
+          package_name: row.PACKAGE_NM || "",
+          procedure_name: row.OBJECT_NM || "",
+          params: group.params,
+        },
+        null,
+        2,
+      ),
+    [row, group.params],
+  );
+
+  const [bodyText, setBodyText] = useState(initialBody);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ code: number; message: string; data: unknown } | null>(
+    null,
+  );
+  const [elapsed, setElapsed] = useState<number | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
+
+  const send = async () => {
+    setError(null);
+    setResult(null);
+    setElapsed(null);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(bodyText);
+    } catch (e) {
+      setError(`${t("jsonParseError")}${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    setLoading(true);
+    const t0 = performance.now();
+    try {
+      const res = await fetch("/api/internal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(parsed),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || `HTTP ${res.status}`);
+      setResult(json);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("callFailed"));
+    } finally {
+      setElapsed(Math.round(performance.now() - t0));
+      setLoading(false);
+    }
+  };
+
+  const dataRows =
+    result && Array.isArray(result.data)
+      ? (result.data as Record<string, unknown>[])
+      : null;
+  const columns =
+    dataRows && dataRows.length > 0 && typeof dataRows[0] === "object"
+      ? Object.keys(dataRows[0])
+      : [];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">
+              {t("testerTitle", { name: row.OBJECT_NM ?? "" })}
+            </div>
+            <code className="text-xs text-muted-foreground">
+              {[row.PACKAGE_NM, row.OBJECT_NM].filter(Boolean).join(".")}
+            </code>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label={t("close")}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-auto p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">
+              Body (raw · JSON)
+              <span className="ml-2 font-normal text-muted-foreground">{t("bodyHint")}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setBodyText(initialBody)}
+              className="text-xs text-primary hover:underline"
+            >
+              {t("restoreDefault")}
+            </button>
+          </div>
+          <textarea
+            value={bodyText}
+            onChange={(e) => setBodyText(e.target.value)}
+            rows={10}
+            spellCheck={false}
+            className="w-full rounded-md border bg-background p-3 font-mono text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+
+          {error ? (
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <p className="text-muted-foreground">{error}</p>
+            </div>
+          ) : result ? (
+            <div className="rounded-lg border">
+              <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2 text-sm">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  {result.code === 200 ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                  )}
+                  code {result.code}
+                </span>
+                <span className="text-muted-foreground">{result.message}</span>
+                {dataRows && (
+                  <span className="text-muted-foreground">· {dataRows.length} rows</span>
+                )}
+                {elapsed != null && (
+                  <span className="text-muted-foreground">· {elapsed} ms</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowRaw((v) => !v)}
+                  className="ml-auto text-xs text-primary hover:underline"
+                >
+                  {showRaw ? t("viewTable") : t("viewRaw")}
+                </button>
+              </div>
+              {showRaw ? (
+                <pre className="max-h-72 overflow-auto p-3 text-xs">
+                  {JSON.stringify(result, null, 2)}
+                </pre>
+              ) : dataRows && dataRows.length > 0 ? (
+                <div className="max-h-72 overflow-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="sticky top-0 z-10 border-b bg-muted text-muted-foreground">
+                      <tr>
+                        <th className="px-2 py-1.5 font-medium">#</th>
+                        {columns.map((c) => (
+                          <th key={c} className="whitespace-nowrap px-2 py-1.5 font-medium">
+                            {c}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dataRows.slice(0, MAX_ROWS).map((r2, i) => (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                          {columns.map((c) => (
+                            <td key={c} className="whitespace-nowrap px-2 py-1">
+                              {fmtCell(r2[c])}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-3 text-xs text-muted-foreground">{t("emptyData")}</div>
+              )}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+          <Button variant="outline" onClick={onClose}>
+            {t("close")}
+          </Button>
+          <Button onClick={send} disabled={loading}>
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+            {t("send")}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -23,9 +23,22 @@
     "query": "照会",
     "ssoAuth": "SSO 認証",
     "loading": "My API リストを読み込み中…",
+    "queryFailed": "照会失敗",
     "empty": "呼び出し可能な API がありません。",
     "noResult": "検索結果なし",
-    "test": "Test"
+    "owner": "所有者",
+    "unnamed": "(名称なし {n})",
+    "test": "Test",
+    "testerTitle": "{name} テスト",
+    "close": "閉じる",
+    "send": "Send",
+    "restoreDefault": "デフォルトに戻す",
+    "viewTable": "テーブル",
+    "viewRaw": "生 JSON",
+    "emptyData": "data が空か、テーブル形式ではありません。",
+    "bodyHint": "params は sample で補完",
+    "jsonParseError": "body JSON 解析エラー: ",
+    "callFailed": "呼び出し失敗"
   },
   "footer": {
     "copyright": "© 2026 SINOKOR. All rights reserved."

@@ -23,9 +23,22 @@
     "query": "조회",
     "ssoAuth": "SSO 인증",
     "loading": "내 API 목록을 불러오는 중…",
+    "queryFailed": "조회 실패",
     "empty": "호출 가능한 API가 없습니다.",
     "noResult": "검색 결과 없음",
-    "test": "Test"
+    "owner": "소유자",
+    "unnamed": "(이름 없음 {n})",
+    "test": "Test",
+    "testerTitle": "{name} 테스트",
+    "close": "닫기",
+    "send": "Send",
+    "restoreDefault": "기본값 복원",
+    "viewTable": "테이블",
+    "viewRaw": "원본 JSON",
+    "emptyData": "data 가 비어 있거나 테이블 형식이 아닙니다.",
+    "bodyHint": "params 는 sample 로 채워짐",
+    "jsonParseError": "body JSON 파싱 오류: ",
+    "callFailed": "호출 실패"
   },
   "footer": {
     "copyright": "© 2026 SINOKOR. All rights reserved."

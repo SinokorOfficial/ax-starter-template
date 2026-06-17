@@ -23,9 +23,22 @@
     "query": "查询",
     "ssoAuth": "SSO 认证",
     "loading": "正在加载我的 API 列表…",
+    "queryFailed": "查询失败",
     "empty": "没有可调用的 API。",
     "noResult": "无搜索结果",
-    "test": "Test"
+    "owner": "所有者",
+    "unnamed": "(无名 {n})",
+    "test": "Test",
+    "testerTitle": "{name} 测试",
+    "close": "关闭",
+    "send": "Send",
+    "restoreDefault": "恢复默认",
+    "viewTable": "表格",
+    "viewRaw": "原始 JSON",
+    "emptyData": "data 为空或非表格格式。",
+    "bodyHint": "params 用 sample 填充",
+    "jsonParseError": "body JSON 解析错误: ",
+    "callFailed": "调用失败"
   },
   "footer": {
     "copyright": "© 2026 SINOKOR. All rights reserved."

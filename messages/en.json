@@ -23,9 +23,22 @@
     "query": "Search",
     "ssoAuth": "SSO Auth",
     "loading": "Loading your API list…",
+    "queryFailed": "Query failed",
     "empty": "No callable APIs.",
     "noResult": "No results",
-    "test": "Test"
+    "owner": "Owner",
+    "unnamed": "(unnamed {n})",
+    "test": "Test",
+    "testerTitle": "{name} test",
+    "close": "Close",
+    "send": "Send",
+    "restoreDefault": "Restore default",
+    "viewTable": "Table",
+    "viewRaw": "Raw JSON",
+    "emptyData": "data is empty or not tabular.",
+    "bodyHint": "params filled with sample",
+    "jsonParseError": "body JSON parse error: ",
+    "callFailed": "Call failed"
   },
   "footer": {
     "copyright": "© 2026 SINOKOR. All rights reserved."
