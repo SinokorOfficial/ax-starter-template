@@ -1,5 +1,5 @@
 {
-  "name": "sinokor-ax-starter-template",
+  "name": "ax-starter-template",
   "version": "1.0.0",
   "private": true,
   "description": "SINOKOR AX 사내 앱 스타터 (Next.js 14 · Entra SSO · next-intl)",
