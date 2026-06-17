@@ -1,0 +1,37 @@
+{
+  "app": {
+    "title": "SINOKOR AX",
+    "subtitle": "AX Platform"
+  },
+  "nav": {
+    "groupApi": "API",
+    "myApi": "My API"
+  },
+  "header": {
+    "search": "Search apps...",
+    "teams": "Teams",
+    "theme": "Theme",
+    "m365": "Microsoft 365",
+    "language": "Language",
+    "logout": "Sign out"
+  },
+  "myApi": {
+    "title": "My API",
+    "desc": "Internal APIs you can call. Automatically listed for your account.",
+    "account": "Account",
+    "search": "Search name, description, package, SP, owner",
+    "query": "Search",
+    "ssoAuth": "SSO Auth",
+    "loading": "Loading your API list…",
+    "empty": "No callable APIs.",
+    "noResult": "No results",
+    "test": "Test"
+  },
+  "footer": {
+    "copyright": "© 2026 SINOKOR. All rights reserved."
+  },
+  "auth": {
+    "login": "Sign in with Microsoft",
+    "loginDesc": "Sign in with your corporate account (Entra ID)."
+  }
+}

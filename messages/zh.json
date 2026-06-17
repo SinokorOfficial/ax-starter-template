@@ -1,0 +1,37 @@
+{
+  "app": {
+    "title": "SINOKOR AX",
+    "subtitle": "AX Platform"
+  },
+  "nav": {
+    "groupApi": "API",
+    "myApi": "My API"
+  },
+  "header": {
+    "search": "搜索应用...",
+    "teams": "Teams",
+    "theme": "主题",
+    "m365": "Microsoft 365",
+    "language": "语言",
+    "logout": "登出"
+  },
+  "myApi": {
+    "title": "My API",
+    "desc": "您可调用的内部 API 列表。按登录账户自动查询。",
+    "account": "查询账户",
+    "search": "搜索名称·说明·包·SP名·所有者",
+    "query": "查询",
+    "ssoAuth": "SSO 认证",
+    "loading": "正在加载我的 API 列表…",
+    "empty": "没有可调用的 API。",
+    "noResult": "无搜索结果",
+    "test": "Test"
+  },
+  "footer": {
+    "copyright": "© 2026 SINOKOR. All rights reserved."
+  },
+  "auth": {
+    "login": "使用 Microsoft 账户登录",
+    "loginDesc": "请使用公司账户(Entra ID)登录。"
+  }
+}

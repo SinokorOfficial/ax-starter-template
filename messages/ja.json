@@ -1,0 +1,37 @@
+{
+  "app": {
+    "title": "SINOKOR AX",
+    "subtitle": "AX Platform"
+  },
+  "nav": {
+    "groupApi": "API",
+    "myApi": "My API"
+  },
+  "header": {
+    "search": "アプリ検索...",
+    "teams": "Teams",
+    "theme": "テーマ",
+    "m365": "Microsoft 365",
+    "language": "言語",
+    "logout": "サインアウト"
+  },
+  "myApi": {
+    "title": "My API",
+    "desc": "呼び出し可能な社内 API のリストです。ログインアカウントで自動照会されます。",
+    "account": "照会アカウント",
+    "search": "名前·説明·パッケージ·SP名·所有者で検索",
+    "query": "照会",
+    "ssoAuth": "SSO 認証",
+    "loading": "My API リストを読み込み中…",
+    "empty": "呼び出し可能な API がありません。",
+    "noResult": "検索結果なし",
+    "test": "Test"
+  },
+  "footer": {
+    "copyright": "© 2026 SINOKOR. All rights reserved."
+  },
+  "auth": {
+    "login": "Microsoft アカウントでサインイン",
+    "loginDesc": "社内アカウント(Entra ID)でサインインしてください。"
+  }
+}
