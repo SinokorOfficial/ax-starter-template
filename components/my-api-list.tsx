@@ -39,12 +39,39 @@ const LIST_REQUEST = {
 };
 
 // SP 행에서 필드명/샘플값 컬럼명을 유연하게 인식.
-const FIELD_NAME_KEYS = ["FIELD_NAME", "ARGUMENT_NAME", "PARAM_NAME", "COLUMN_NAME"];
-const SAMPLE_KEYS = ["SAMPLE_VALUE", "SAMPLE", "EXAMPLE", "DEFAULT_VALUE"];
+// 필드 컬럼은 alias 에 field_ 접두가 붙음 → field_ 접두형 우선, pick 은 대소문자 무시.
+const FIELD_NAME_KEYS = [
+  "field_field_nm",
+  "field_field_name",
+  "field_nm",
+  "field_name",
+  "field_param_name",
+  "field_column_nm",
+  "FIELD_NM",
+  "FIELD_NAME",
+  "ARGUMENT_NAME",
+  "PARAM_NAME",
+  "COLUMN_NAME",
+];
+const SAMPLE_KEYS = [
+  "field_sample_value",
+  "field_sample_val",
+  "field_sample",
+  "SAMPLE_VALUE",
+  "SAMPLE",
+  "EXAMPLE",
+  "DEFAULT_VALUE",
+];
 const MAX_ROWS = 200;
 
 function pick(row: ApiRow, keys: string[]): unknown {
-  for (const k of keys) if (row[k] != null && row[k] !== "") return row[k];
+  // 대소문자 무시 — alias 가 field_ 처럼 소문자/혼합이어도 매칭.
+  const lower: Record<string, unknown> = {};
+  for (const k of Object.keys(row)) lower[k.toLowerCase()] = row[k];
+  for (const k of keys) {
+    const v = lower[k.toLowerCase()];
+    if (v != null && v !== "") return v;
+  }
   return undefined;
 }
 
