@@ -109,14 +109,90 @@ const iconBtn =
 const menuItem =
   "flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-accent";
 
-// Microsoft 365 런처 (스타터 기본 링크)
-const M365_LINKS = [
-  { label: "Outlook", href: "https://outlook.office.com" },
-  { label: "Teams", href: "https://teams.microsoft.com" },
-  { label: "SharePoint", href: "https://www.office.com/launch/sharepoint" },
-  { label: "OneDrive", href: "https://www.office.com/launch/onedrive" },
-  { label: "Office Home", href: "https://www.office.com" },
+// 앱 런처(9-dot) — M365 E3 앱 + AI + Developer. 클릭 시 새 창. (ax-portal과 동일)
+interface LaunchApp {
+  name: string;
+  url: string;
+  /** 아이콘 이미지 URL (로드 실패 시 색상 타일로 폴백) */
+  icon: string;
+  /** 폴백 타일 배경색 */
+  color: string;
+  /** 폴백 타일에 표시할 글자(1~2자) */
+  abbr: string;
+}
+
+// Microsoft 공식 브랜드 아이콘 CDN (Fabric/Office) — 수년째 안정적인 정적 경로.
+const FAB =
+  "https://static2.sharepointonline.com/files/fabric/assets/brand-icons/product/svg";
+const fab = (slug: string) => `${FAB}/${slug}_48x1.svg`;
+// 서비스 파비콘 (Google s2) — 항상 실제 브랜드 아이콘 반환.
+const fav = (domain: string) =>
+  `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
+
+const M365_APPS: LaunchApp[] = [
+  { name: "Outlook", url: "https://outlook.office.com/mail", icon: fab("outlook"), color: "#0F6CBD", abbr: "O" },
+  { name: "Teams", url: "https://teams.microsoft.com", icon: fab("teams"), color: "#5059C9", abbr: "T" },
+  { name: "Loop", url: "https://loop.cloud.microsoft", icon: fav("loop.microsoft.com"), color: "#5B57C2", abbr: "Lo" },
+  { name: "Microsoft 365", url: "https://m365.cloud.microsoft", icon: fab("office"), color: "#D83B01", abbr: "M" },
+  { name: "OneDrive", url: "https://www.office.com/launch/onedrive", icon: fab("onedrive"), color: "#0364B8", abbr: "OD" },
+  { name: "Word", url: "https://www.office.com/launch/word", icon: fab("word"), color: "#185ABD", abbr: "W" },
+  { name: "Excel", url: "https://www.office.com/launch/excel", icon: fab("excel"), color: "#107C41", abbr: "X" },
+  { name: "PowerPoint", url: "https://www.office.com/launch/powerpoint", icon: fab("powerpoint"), color: "#C43E1C", abbr: "P" },
+  { name: "OneNote", url: "https://www.office.com/launch/onenote", icon: fab("onenote"), color: "#7719AA", abbr: "N" },
+  { name: "SharePoint", url: "https://www.office.com/launch/sharepoint", icon: fab("sharepoint"), color: "#038387", abbr: "S" },
 ];
+
+const AI_APPS: LaunchApp[] = [
+  { name: "ChatGPT", url: "https://chat.openai.com", icon: fav("openai.com"), color: "#10A37F", abbr: "G" },
+  { name: "Claude", url: "https://claude.ai", icon: fav("claude.ai"), color: "#D97757", abbr: "C" },
+];
+
+const DEV_APPS: LaunchApp[] = [
+  { name: "GitHub", url: "https://github.com/SinokorOfficial", icon: fav("github.com"), color: "#181717", abbr: "GH" },
+  { name: "Graph", url: "https://developer.microsoft.com/en-us/graph/graph-explorer", icon: fav("developer.microsoft.com"), color: "#0F6CBD", abbr: "G" },
+  // UI 개발 참고 — 현재 컴포넌트 스택(shadcn/ui · lucide · Tailwind · Radix)
+  { name: "shadcn/ui", url: "https://ui.shadcn.com/docs/components", icon: fav("ui.shadcn.com"), color: "#000000", abbr: "sh" },
+  { name: "Lucide", url: "https://lucide.dev/icons", icon: fav("lucide.dev"), color: "#F56565", abbr: "Lu" },
+  { name: "Tailwind", url: "https://tailwindcss.com/docs", icon: fav("tailwindcss.com"), color: "#06B6D4", abbr: "TW" },
+  { name: "Radix UI", url: "https://www.radix-ui.com/primitives", icon: fav("radix-ui.com"), color: "#6E56CF", abbr: "Rx" },
+];
+
+function AppTile({ app }: { app: LaunchApp }) {
+  const [imgError, setImgError] = useState(false);
+  const showImg = Boolean(app.icon) && !imgError;
+  return (
+    <a
+      href={app.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col items-center gap-1 rounded-md p-1.5 text-center outline-none transition-colors hover:bg-accent focus-visible:bg-accent"
+      title={app.name}
+    >
+      {!showImg ? (
+        <span
+          className="flex h-7 w-7 items-center justify-center rounded text-xs font-semibold text-white"
+          style={{ backgroundColor: app.color }}
+        >
+          {app.abbr}
+        </span>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={app.icon}
+          alt=""
+          width={28}
+          height={28}
+          loading="lazy"
+          className="h-7 w-7 object-contain"
+          onError={() => setImgError(true)}
+        />
+      )}
+      <span className="w-full truncate text-[10px] leading-tight text-muted-foreground">
+        {app.name}
+      </span>
+    </a>
+  );
+}
 
 export function Header({ onMenu }: { onMenu: () => void }) {
   const t = useTranslations("header");
@@ -181,16 +257,33 @@ export function Header({ onMenu }: { onMenu: () => void }) {
         {/* 다크모드 */}
         <ThemeToggle />
 
-        {/* Microsoft 365 런처 */}
-        <Dropdown align="end" buttonClassName={iconBtn} trigger={<LayoutGrid className="h-4 w-4" />}>
-          <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-            {t("m365")}
+        {/* 앱 런처 (9-dot) — M365 · AI · Developer (ax-portal과 동일) */}
+        <Dropdown
+          align="end"
+          buttonClassName={iconBtn}
+          panelClassName="w-64 max-h-[80vh] overflow-y-auto p-2"
+          trigger={<LayoutGrid className="h-4 w-4" />}
+        >
+          <div className="px-1 py-1 text-sm font-medium">Microsoft 365</div>
+          <div className="grid grid-cols-4 gap-0.5">
+            {M365_APPS.map((a) => (
+              <AppTile key={a.name} app={a} />
+            ))}
           </div>
-          {M365_LINKS.map((l) => (
-            <a key={l.href} href={l.href} target="_blank" rel="noreferrer" className={menuItem}>
-              {l.label}
-            </a>
-          ))}
+          <div className="my-2 h-px bg-border" />
+          <div className="px-1 py-1 text-sm font-medium">AI</div>
+          <div className="grid grid-cols-4 gap-0.5">
+            {AI_APPS.map((a) => (
+              <AppTile key={a.name} app={a} />
+            ))}
+          </div>
+          <div className="my-2 h-px bg-border" />
+          <div className="px-1 py-1 text-sm font-medium">Developer</div>
+          <div className="grid grid-cols-4 gap-0.5">
+            {DEV_APPS.map((a) => (
+              <AppTile key={a.name} app={a} />
+            ))}
+          </div>
         </Dropdown>
 
         {/* 언어 전환 */}

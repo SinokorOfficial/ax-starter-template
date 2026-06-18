@@ -5,7 +5,10 @@
   },
   "nav": {
     "groupApi": "API",
-    "myApi": "My API"
+    "myApi": "My API",
+    "groupM365": "M365",
+    "mail": "邮件",
+    "calendar": "日程"
   },
   "header": {
     "search": "搜索应用...",

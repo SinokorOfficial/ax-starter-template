@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { KeyRound } from "lucide-react";
+import { KeyRound, Inbox, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({
@@ -37,8 +37,20 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   const t = useTranslations();
   const pathname = usePathname();
 
-  // 스타터 기본 메뉴: API ▸ My API (SSO 검증용). 새 메뉴는 여기에 추가.
-  const items = [{ href: "/my-api", label: t("nav.myApi"), icon: KeyRound }];
+  // 스타터 기본 메뉴: 그룹(label) + 항목. 새 메뉴는 여기에 추가.
+  const groups = [
+    {
+      label: t("nav.groupApi"),
+      items: [{ href: "/my-api", label: t("nav.myApi"), icon: KeyRound }],
+    },
+    {
+      label: t("nav.groupM365"),
+      items: [
+        { href: "/me/mail", label: t("nav.mail"), icon: Inbox },
+        { href: "/me/calendar", label: t("nav.calendar"), icon: CalendarDays },
+      ],
+    },
+  ];
 
   return (
     <div className="flex h-full min-h-screen flex-col">
@@ -58,30 +70,34 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
 
       {/* 네비 */}
-      <nav className="flex-1 space-y-1 p-3">
-        <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("nav.groupApi")}
-        </div>
-        {items.map((it) => {
-          const active = pathname.startsWith(it.href);
-          const Icon = it.icon;
-          return (
-            <Link
-              key={it.href}
-              href={it.href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {it.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-4 p-3">
+        {groups.map((group) => (
+          <div key={group.label} className="space-y-1">
+            <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {group.label}
+            </div>
+            {group.items.map((it) => {
+              const active = pathname.startsWith(it.href);
+              const Icon = it.icon;
+              return (
+                <Link
+                  key={it.href}
+                  href={it.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {it.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* 푸터 */}

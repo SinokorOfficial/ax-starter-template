@@ -5,7 +5,10 @@
   },
   "nav": {
     "groupApi": "API",
-    "myApi": "My API"
+    "myApi": "My API",
+    "groupM365": "M365",
+    "mail": "Mail",
+    "calendar": "Calendar"
   },
   "header": {
     "search": "Search apps...",

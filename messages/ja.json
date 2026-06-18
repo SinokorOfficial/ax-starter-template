@@ -5,7 +5,10 @@
   },
   "nav": {
     "groupApi": "API",
-    "myApi": "My API"
+    "myApi": "My API",
+    "groupM365": "M365",
+    "mail": "メール",
+    "calendar": "予定"
   },
   "header": {
     "search": "アプリ検索...",
