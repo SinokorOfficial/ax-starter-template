@@ -41,27 +41,14 @@ const LIST_REQUEST = {
 // SP 행에서 필드명/샘플값 컬럼명을 유연하게 인식.
 // 필드 컬럼은 alias 에 field_ 접두가 붙음 → field_ 접두형 우선, pick 은 대소문자 무시.
 const FIELD_NAME_KEYS = [
-  "field_field_nm",
-  "field_field_name",
   "field_nm",
   "field_name",
-  "field_param_name",
-  "field_column_nm",
-  "FIELD_NM",
-  "FIELD_NAME",
-  "ARGUMENT_NAME",
-  "PARAM_NAME",
-  "COLUMN_NAME",
+  "param_nm",
+  "param_name",
+  "arg_nm",
+  "column_nm",
 ];
-const SAMPLE_KEYS = [
-  "field_sample_value",
-  "field_sample_val",
-  "field_sample",
-  "SAMPLE_VALUE",
-  "SAMPLE",
-  "EXAMPLE",
-  "DEFAULT_VALUE",
-];
+const SAMPLE_KEYS = ["field_sample_value", "sample_value", "sample_val", "sample"];
 const MAX_ROWS = 200;
 
 function pick(row: ApiRow, keys: string[]): unknown {
