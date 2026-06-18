@@ -93,6 +93,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: { strategy: "jwt" },
+  pages: { signIn: "/login" },
   callbacks: {
     async jwt({ token, account }) {
       // 최초 로그인: account 에 토큰이 담겨 옴 + 역할 판정

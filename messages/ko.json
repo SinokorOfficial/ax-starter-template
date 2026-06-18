@@ -54,6 +54,7 @@
     "copyright": "© 2026 SINOKOR. All rights reserved."
   },
   "auth": {
+    "appName": "SINOKOR AX Starter Template",
     "login": "Microsoft 계정으로 로그인",
     "loginDesc": "사내 계정(Entra ID)으로 로그인하세요."
   }

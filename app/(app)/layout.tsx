@@ -9,7 +9,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentSessionUser();
-  if (!user) redirect("/api/auth/signin");
+  if (!user) redirect("/login");
 
   return <AppShell>{children}</AppShell>;
 }
