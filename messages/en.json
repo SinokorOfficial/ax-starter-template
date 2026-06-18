@@ -29,6 +29,7 @@
     "admin": "Admin"
   },
   "myApi": {
+    "copyForLlm": "Copy for LLM (API spec)",
     "title": "My API",
     "desc": "Internal APIs you can call. Automatically listed for your account.",
     "account": "Account",

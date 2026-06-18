@@ -29,6 +29,7 @@
     "admin": "管理员"
   },
   "myApi": {
+    "copyForLlm": "复制给 LLM (API 规格)",
     "title": "My API",
     "desc": "您可调用的内部 API 列表。按登录账户自动查询。",
     "account": "查询账户",

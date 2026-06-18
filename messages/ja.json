@@ -29,6 +29,7 @@
     "admin": "管理者"
   },
   "myApi": {
+    "copyForLlm": "LLM用コピー (API仕様)",
     "title": "My API",
     "desc": "呼び出し可能な社内 API のリストです。ログインアカウントで自動照会されます。",
     "account": "照会アカウント",

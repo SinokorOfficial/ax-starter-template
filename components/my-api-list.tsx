@@ -11,6 +11,8 @@ import {
   RefreshCw,
   X,
   Play,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +83,32 @@ function fmtCell(v: unknown): string {
   return String(v);
 }
 
+// LLM 에 그대로 붙여넣어 "이 API 를 호출하는 코드" 를 작성시킬 수 있는 명세 텍스트.
+// 엔드포인트·요청 body·응답 형태까지 담아 사람보다 LLM 친화적으로.
+function buildCopyText(g: ApiGroup): string {
+  const r = g.api;
+  const title = r.LLM_SYNONYM || r.OBJECT_NM || "";
+  const desc = r.LLM_DESC || r.OBJECT_DESC || "";
+  const body = {
+    user_name: r.OWNER || "API",
+    package_name: r.PACKAGE_NM || "",
+    procedure_name: r.OBJECT_NM || "",
+    params: g.params,
+  };
+  return [
+    "[SINOKOR AX 사내 API 호출 명세]",
+    `이름: ${title}`,
+    desc ? `설명: ${desc}` : "",
+    "호출: 브라우저에서 POST /api/internal (SSO 자동 인증, 키 불필요).",
+    "요청 body(JSON):",
+    JSON.stringify(body, null, 2),
+    "응답: { code, message, data } — data 는 결과 행 배열.",
+    "예: const res = await fetch('/api/internal',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(BODY)}); const { data } = await res.json();",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export function MyApiList() {
   const t = useTranslations("myApi");
   const { data: session } = useSession();
@@ -91,6 +119,17 @@ export function MyApiList() {
   const [groups, setGroups] = useState<ApiGroup[] | null>(null);
   const [q, setQ] = useState("");
   const [testGroup, setTestGroup] = useState<ApiGroup | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyApi = async (g: ApiGroup, id: string) => {
+    try {
+      await navigator.clipboard.writeText(buildCopyText(g));
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 1500);
+    } catch {
+      /* 무시 */
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -206,21 +245,36 @@ export function MyApiList() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visible!.map((g, i) => {
                 const r = g.api;
+                const id = r.OBJECT_ID || String(i);
                 const title = r.LLM_SYNONYM || r.OBJECT_NM || t("unnamed", { n: i + 1 });
                 const path = [r.PACKAGE_NM, r.OBJECT_NM].filter(Boolean).join(".");
                 const desc = r.LLM_DESC || r.OBJECT_DESC || "—";
                 return (
                   <div
-                    key={r.OBJECT_ID || i}
+                    key={id}
                     className="flex flex-col rounded-lg border bg-card p-4 text-card-foreground"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="rounded border px-1.5 py-0.5 text-xs text-muted-foreground">
                         {r.OBJECT_TP || "PROCEDURE"}
                       </span>
-                      <Button size="sm" onClick={() => setTestGroup(g)}>
-                        <Play className="h-4 w-4" /> {t("test")}
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => copyApi(g, id)}
+                          title={t("copyForLlm")}
+                          className="flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground hover:bg-accent hover:text-foreground"
+                        >
+                          {copiedId === id ? (
+                            <Check className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                        <Button size="sm" onClick={() => setTestGroup(g)}>
+                          <Play className="h-4 w-4" /> {t("test")}
+                        </Button>
+                      </div>
                     </div>
                     <h3 className="mt-3 text-base font-semibold">{title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{desc}</p>

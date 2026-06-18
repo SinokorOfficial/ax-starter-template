@@ -29,6 +29,7 @@
     "admin": "관리자"
   },
   "myApi": {
+    "copyForLlm": "LLM용 복사 (API 명세)",
     "title": "My API",
     "desc": "내가 호출할 수 있는 사내 API 목록입니다. 로그인 계정으로 자동 조회됩니다.",
     "account": "조회 계정",
