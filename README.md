@@ -1,7 +1,7 @@
 # SINOKOR AX Starter Template
 
 SINOKOR AX 사내 앱을 **바로 시작**하기 위한 스타터 템플릿입니다.
-**Entra SSO 로그인 · 셸(헤더·사이드바·푸터) · My API(SSO 검증 데모) · 다국어(ko/en/zh/ja) · 다크모드**가 이미 동작합니다 — 교육생은 **기능 개발에만 집중**하면 됩니다.
+**Entra SSO 로그인 · 셸(헤더·사이드바·푸터) · My API(SSO 검증 데모) · M365(메일·일정) · 다국어(ko/en/zh/ja) · 다크모드**가 이미 동작합니다 — 교육생은 **기능 개발에만 집중**하면 됩니다.
 
 ## 스택
 - Next.js 14 (App Router) · TypeScript · Tailwind CSS
@@ -28,15 +28,34 @@ npm run dev
 # → http://localhost:3000 → Microsoft 계정으로 로그인 → 코딩 시작!
 ```
 
-`.env.local` 에 채울 값:
-| 변수 | 설명 |
+`.env.local` 에 **직접 채워야 하는 값은 3개**뿐입니다 (나머지는 기본값 그대로 OK):
+| 변수 | 채울 값 |
 |---|---|
-| `NEXTAUTH_SECRET` | `openssl rand -base64 32` 로 생성 (앱마다 임의값) |
-| `ENTRA_TENANT_ID` | 테넌트 ID (기본값 채워져 있음) |
-| `ENTRA_CLIENT_ID` / `ENTRA_CLIENT_SECRET` | 사용할 앱 등록 값 (아래 참조) |
-| `APIM_SCOPE` | **비워두기** (공유 APIM API 기본값이 박혀 있음) |
+| ⭐ `NEXTAUTH_SECRET` | `openssl rand -base64 32` 로 생성 (앱마다 임의값) |
+| ⭐ `ENTRA_CLIENT_ID` | 사용할 앱 등록의 client id — **강사/관리자에게 받기** |
+| ⭐ `ENTRA_CLIENT_SECRET` | 위 앱 등록의 client secret — **받기 · 절대 커밋 금지** |
+
+이미 채워져 있어 안 건드려도 되는 값: `NEXTAUTH_URL`(로컬), `ENTRA_TENANT_ID`(시노코 테넌트), `APIM_SP_URL`(SSO 엔드포인트). `APIM_SCOPE`·`APIM_PORTAL_KEY`는 **비워두기**(키리스).
 
 > ⚠️ `ENTRA_CLIENT_SECRET` 은 **절대 레포에 커밋하지 마세요.** `.env.local` 은 `.gitignore` 에 포함돼 있습니다.
+
+---
+
+## ✅ 사전 준비 (Entra 쪽, 코드 밖 · 1회)
+
+`.env.local` 을 채워도 아래가 안 돼 있으면 로그인/기능이 막힙니다. **공유 `SinokorAiPortal` 등록을 재사용하면 1·2는 보통 이미 돼 있습니다.**
+
+1. **리디렉션 URI 등록** — 쓰는 앱 등록에 `<NEXTAUTH_URL>/api/auth/callback/azure-ad` 가 있어야 로그인 콜백이 됩니다.
+   - 로컬: `http://localhost:3000/api/auth/callback/azure-ad`
+   - 배포: `https://<운영도메인>/api/auth/callback/azure-ad`
+2. **M365(메일·일정) 사용 시 — 관리자 동의** — 앱 등록 *API 권한*에 위임 권한 추가 + **관리자 동의**:
+   - `Mail.Read` · `Mail.Send` · `Calendars.Read` (+ 기본 `User.Read` · `Chat.Read`)
+   - 미동의 시: **로그인·My API 는 정상**, 메일/일정 화면만 권한 오류. 스코프 추가/동의 후엔 **로그아웃→재로그인** 해야 새 권한이 토큰에 반영됩니다.
+
+| 하려는 것 | 필요 조건 |
+|---|---|
+| 로그인 + My API(SSO) | `.env.local` 3개 값 + 리디렉션 URI |
+| + 메일/일정(M365) | 위 + M365 스코프 **관리자 동의** + 재로그인 |
 
 ---
 
@@ -58,22 +77,27 @@ npm run dev
 ## 🗂 구조
 ```
 app/
-  layout.tsx            # 세션·테마·i18n provider + lang
-  (app)/layout.tsx      # 인증 셸 (헤더 + 사이드바)
-  (app)/my-api/page.tsx # SSO 검증 데모
-  api/auth/[...]        # NextAuth (Entra)
-  api/me/profile        # Graph /me (헤더 프로필)
-  api/internal          # BFF → APIM (SSO, 토큰 캐시)
-  actions.ts            # setLocale 서버액션
-components/             # header, sidebar, my-api-list, language-switcher, ui/*
-lib/                    # auth, apim, graph, session, utils
-i18n/ · messages/       # next-intl (ko/en/zh/ja)
+  layout.tsx              # 세션·테마·i18n provider + lang
+  icon.svg                # 파비콘 (AX)
+  (app)/layout.tsx        # 인증 셸 (헤더 + 사이드바)
+  (app)/my-api/page.tsx   # SSO 검증 데모
+  (app)/me/mail/page.tsx  # M365 메일 (목록·본문·발신·회신)
+  (app)/me/calendar/page.tsx # M365 일정 (캘린더·리스트)
+  api/auth/[...]          # NextAuth (Entra)
+  api/me/profile          # Graph /me (헤더 프로필)
+  api/me/teams-chats      # Graph /me/chats (헤더 안읽음)
+  api/me/messages, .../events # BFF → Graph (메일·일정, 위임)
+  api/internal            # BFF → APIM (SSO, 토큰 캐시)
+  actions.ts              # setLocale 서버액션
+components/               # header, sidebar, my-api-list, page-header, language-switcher, ui/*
+lib/                      # auth, apim, graph, portal-client, types, session, utils
+i18n/ · messages/         # next-intl (ko/en/zh/ja)
 ```
 
 ## ➕ 새 메뉴/화면 추가
-1. `components/sidebar.tsx` 의 `items` 에 `{ href, label, icon }` 추가
+1. `components/sidebar.tsx` 의 `groups` 에서 해당 그룹 `items` 에 `{ href, label, icon }` 추가 (새 그룹이면 `{ label, items }` 추가)
 2. `app/(app)/<route>/page.tsx` 생성
-3. 문구는 `messages/*.json` 에 키 추가 후 `useTranslations()` 로 사용
+3. 문구는 `messages/*.json` 에 **4개 언어 같은 키**로 추가 후 `useTranslations()` 로 사용
 
 ## 🌐 다국어 (i18n)
 - 헤더 🌐 토글 → `locale` 쿠키 → **UI(next-intl)** + **데이터 언어** 동시 결정
