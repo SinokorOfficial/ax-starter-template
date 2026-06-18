@@ -13,7 +13,17 @@
     "theme": "테마",
     "m365": "Microsoft 365",
     "language": "언어",
-    "logout": "로그아웃"
+    "logout": "로그아웃",
+    "publicIp": "내 공인 IP (API 차단 대상)",
+    "copyIp": "클릭하면 복사",
+    "ipChecking": "확인 중…",
+    "ipError": "확인 불가"
+  },
+  "roles": {
+    "guest": "게스트",
+    "employee": "직원",
+    "builder": "빌더",
+    "admin": "관리자"
   },
   "myApi": {
     "title": "My API",

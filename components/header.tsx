@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { Menu, Search, MessageSquare, LayoutGrid, LogOut } from "lucide-react";
+import {
+  Menu,
+  Search,
+  MessageSquare,
+  LayoutGrid,
+  LogOut,
+  Globe,
+  Copy,
+  Check,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -27,8 +36,15 @@ const M365_LINKS = [
 
 export function Header({ onMenu }: { onMenu: () => void }) {
   const t = useTranslations("header");
+  const tr = useTranslations("roles");
   const { data: session } = useSession();
   const [profile, setProfile] = useState<MeProfile | null>(null);
+  const [ip, setIp] = useState<string | null>(null);
+  const [ipError, setIpError] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const role = session?.user?.role;
+  const isAdmin = role === "admin";
 
   useEffect(() => {
     fetch("/api/me/profile", { credentials: "same-origin" })
@@ -37,9 +53,30 @@ export function Header({ onMenu }: { onMenu: () => void }) {
       .catch(() => {});
   }, []);
 
+  // 내 공인 IP — APIM/ACA IP 차단 대상. 관리자에게만 표시.
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch("https://api.ipify.org?format=json")
+      .then((r) => r.json())
+      .then((j: { ip?: string }) => setIp(j.ip ?? null))
+      .catch(() => setIpError(true));
+  }, [isAdmin]);
+
+  const copyIp = () => {
+    if (!ip) return;
+    navigator.clipboard?.writeText(ip).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      },
+      () => {},
+    );
+  };
+
   const name = profile?.displayName ?? session?.user?.name ?? session?.user?.email ?? "";
   const email = profile?.mail ?? profile?.userPrincipalName ?? session?.user?.email ?? "";
   const deptTitle = [profile?.department, profile?.jobTitle].filter(Boolean).join(" · ");
+  const roleLabel = role ? tr(role) : "";
   const initial = name.charAt(0).toUpperCase() || "U";
 
   return (
@@ -100,7 +137,42 @@ export function Header({ onMenu }: { onMenu: () => void }) {
             <div className="text-sm font-medium">{name}</div>
             {deptTitle && <div className="text-xs text-muted-foreground">{deptTitle}</div>}
             {email && <div className="truncate text-xs text-muted-foreground">{email}</div>}
+            {roleLabel && (
+              <div className="mt-1 inline-block rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                {roleLabel}
+              </div>
+            )}
           </div>
+
+          {/* 공인 IP (관리자) */}
+          {isAdmin && (
+            <>
+              <div className="my-1 h-px bg-border" />
+              <button
+                type="button"
+                onClick={copyIp}
+                title={t("copyIp")}
+                className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-xs hover:bg-accent"
+              >
+                <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <div className="flex-1 text-left leading-tight">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {t("publicIp")}
+                  </div>
+                  <div className="font-mono">
+                    {ip ?? (ipError ? t("ipError") : t("ipChecking"))}
+                  </div>
+                </div>
+                {ip &&
+                  (copied ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  ))}
+              </button>
+            </>
+          )}
+
           <div className="my-1 h-px bg-border" />
           <button onClick={() => signOut()} className={cn(menuItem, "text-destructive")}>
             <LogOut className="h-4 w-4" />

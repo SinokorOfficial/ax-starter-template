@@ -13,7 +13,17 @@
     "theme": "Theme",
     "m365": "Microsoft 365",
     "language": "Language",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "publicIp": "My public IP (API restriction target)",
+    "copyIp": "Click to copy",
+    "ipChecking": "Checking…",
+    "ipError": "Unavailable"
+  },
+  "roles": {
+    "guest": "Guest",
+    "employee": "Employee",
+    "builder": "Builder",
+    "admin": "Admin"
   },
   "myApi": {
     "title": "My API",

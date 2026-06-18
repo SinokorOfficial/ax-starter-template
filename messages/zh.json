@@ -13,7 +13,17 @@
     "theme": "主题",
     "m365": "Microsoft 365",
     "language": "语言",
-    "logout": "登出"
+    "logout": "登出",
+    "publicIp": "我的公网 IP (API 限制对象)",
+    "copyIp": "点击复制",
+    "ipChecking": "查询中…",
+    "ipError": "无法获取"
+  },
+  "roles": {
+    "guest": "访客",
+    "employee": "员工",
+    "builder": "构建者",
+    "admin": "管理员"
   },
   "myApi": {
     "title": "My API",

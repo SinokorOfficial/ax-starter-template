@@ -13,7 +13,17 @@
     "theme": "テーマ",
     "m365": "Microsoft 365",
     "language": "言語",
-    "logout": "サインアウト"
+    "logout": "サインアウト",
+    "publicIp": "自分のパブリック IP (API 制限対象)",
+    "copyIp": "クリックでコピー",
+    "ipChecking": "確認中…",
+    "ipError": "取得不可"
+  },
+  "roles": {
+    "guest": "ゲスト",
+    "employee": "社員",
+    "builder": "ビルダー",
+    "admin": "管理者"
   },
   "myApi": {
     "title": "My API",
