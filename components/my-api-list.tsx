@@ -246,9 +246,11 @@ export function MyApiList() {
               {visible!.map((g, i) => {
                 const r = g.api;
                 const id = r.OBJECT_ID || String(i);
-                const title = r.LLM_SYNONYM || r.OBJECT_NM || t("unnamed", { n: i + 1 });
+                const objectDesc =
+                  r.OBJECT_DESC || r.OBJECT_NM || t("unnamed", { n: i + 1 });
+                const llmDesc = r.LLM_DESC || "";
+                const llmSynonym = r.LLM_SYNONYM || "";
                 const path = [r.PACKAGE_NM, r.OBJECT_NM].filter(Boolean).join(".");
-                const desc = r.LLM_DESC || r.OBJECT_DESC || "—";
                 return (
                   <div
                     key={id}
@@ -276,8 +278,13 @@ export function MyApiList() {
                         </Button>
                       </div>
                     </div>
-                    <h3 className="mt-3 text-base font-semibold">{title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
+                    <h3 className="mt-3 text-base font-semibold">{objectDesc}</h3>
+                    {llmDesc && (
+                      <p className="mt-1 text-sm text-muted-foreground">{llmDesc}</p>
+                    )}
+                    {llmSynonym && (
+                      <p className="mt-0.5 text-sm text-muted-foreground">{llmSynonym}</p>
+                    )}
                     <div className="mt-auto pt-3 text-xs text-muted-foreground">
                       {t("owner")}: {r.OWNER || "—"}
                       {path && <code className="mt-1 block truncate">{path}</code>}
