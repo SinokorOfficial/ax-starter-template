@@ -12,6 +12,8 @@ const DELEGATED_SCOPES = [
   "email",
   "offline_access",
   "https://graph.microsoft.com/User.Read",
+  // Teams 안읽음 채팅(헤더 드롭다운). 공유 앱 등록은 Chat.Read 관리자 동의 완료.
+  "https://graph.microsoft.com/Chat.Read",
 ].join(" ");
 
 // ── 역할 판정 ───────────────────────────────────────────────

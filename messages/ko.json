@@ -10,6 +10,9 @@
   "header": {
     "search": "앱 검색...",
     "teams": "Teams",
+    "teamsTitle": "Teams 채팅",
+    "unread": "안읽음",
+    "teamsEmpty": "채팅 없음",
     "theme": "테마",
     "m365": "Microsoft 365",
     "language": "언어",

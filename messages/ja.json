@@ -10,6 +10,9 @@
   "header": {
     "search": "アプリ検索...",
     "teams": "Teams",
+    "teamsTitle": "Teams チャット",
+    "unread": "未読",
+    "teamsEmpty": "チャットなし",
     "theme": "テーマ",
     "m365": "Microsoft 365",
     "language": "言語",

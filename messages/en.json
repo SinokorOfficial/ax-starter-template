@@ -10,6 +10,9 @@
   "header": {
     "search": "Search apps...",
     "teams": "Teams",
+    "teamsTitle": "Teams chats",
+    "unread": "unread",
+    "teamsEmpty": "No chats",
     "theme": "Theme",
     "m365": "Microsoft 365",
     "language": "Language",

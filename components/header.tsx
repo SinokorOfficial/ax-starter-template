@@ -18,7 +18,91 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { cn } from "@/lib/utils";
-import type { MeProfile } from "@/lib/graph";
+import type { MeProfile, TeamsChat } from "@/lib/graph";
+
+// 상대 시간 (방금 / N분 전 / N시간 전 / N일 전)
+function relTime(iso: string): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "방금";
+  if (m < 60) return `${m}분 전`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}시간 전`;
+  return `${Math.floor(h / 24)}일 전`;
+}
+
+// Teams 안읽음 채팅 — 아이콘 + 뱃지, 클릭 시 드롭다운(최대 10). Chat.Read 필요.
+function TeamsChatMenu() {
+  const t = useTranslations("header");
+  const [chats, setChats] = useState<TeamsChat[]>([]);
+
+  useEffect(() => {
+    fetch("/api/me/teams-chats", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.chats && setChats(d.chats))
+      .catch(() => {});
+  }, []);
+
+  const unread = chats.filter((c) => c.unread).length;
+  const iconBtnRel =
+    "relative flex h-9 w-9 items-center justify-center rounded-full border text-muted-foreground hover:bg-accent hover:text-foreground";
+
+  return (
+    <Dropdown
+      align="end"
+      buttonClassName={iconBtnRel}
+      panelClassName="w-80 max-h-96 overflow-auto"
+      trigger={
+        <>
+          <MessageSquare className="h-4 w-4" />
+          {unread > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+              {unread}
+            </span>
+          )}
+        </>
+      }
+    >
+      <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+        {t("teamsTitle")} · {t("unread")} {unread}
+      </div>
+      {chats.length === 0 ? (
+        <div className="px-3 py-2 text-sm text-muted-foreground">{t("teamsEmpty")}</div>
+      ) : (
+        chats.slice(0, 10).map((c) => (
+          <a
+            key={c.id}
+            href={c.webUrl ?? "https://teams.microsoft.com"}
+            target="_blank"
+            rel="noreferrer"
+            className="flex gap-2 rounded-sm px-3 py-2 hover:bg-accent"
+          >
+            <span
+              className={cn(
+                "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                c.unread ? "bg-blue-500" : "border border-muted",
+              )}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-medium">
+                  {c.topic || c.fromName}
+                </span>
+                <span className="shrink-0 text-[10px] text-muted-foreground">
+                  {relTime(c.lastMessageAt)}
+                </span>
+              </div>
+              <div className="truncate text-xs text-muted-foreground">
+                {c.fromName}: {c.preview}
+              </div>
+            </div>
+          </a>
+        ))
+      )}
+    </Dropdown>
+  );
+}
 
 const iconBtn =
   "flex h-9 w-9 items-center justify-center rounded-full border text-muted-foreground hover:bg-accent hover:text-foreground";
@@ -91,16 +175,8 @@ export function Header({ onMenu }: { onMenu: () => void }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        {/* Teams */}
-        <a
-          href="https://teams.microsoft.com"
-          target="_blank"
-          rel="noreferrer"
-          className={iconBtn}
-          title={t("teams")}
-        >
-          <MessageSquare className="h-4 w-4" />
-        </a>
+        {/* Teams 안읽음 채팅 */}
+        <TeamsChatMenu />
 
         {/* 다크모드 */}
         <ThemeToggle />
