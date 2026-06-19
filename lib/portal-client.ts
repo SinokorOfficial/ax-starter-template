@@ -61,6 +61,20 @@ export async function replyMail(
   await asJson<{ ok: true }>(res);
 }
 
+/** POST /api/me/teams-message → 직원(들)에게 Teams 1:1 알림 발송(본인 명의, 여러 명 가능). */
+export async function sendTeamsNotify(input: {
+  to: string;
+  text: string;
+}): Promise<{ ok: boolean; sent: string[]; failed: { to: string; error?: string }[] }> {
+  const res = await fetch("/api/me/teams-message", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  return asJson(res);
+}
+
 /** GET /api/me/events → 본인 일정. range(start/end, ISO) 주면 그 기간(캘린더 월 보기). */
 export async function fetchMyEvents(range?: {
   start: string;

@@ -8,7 +8,8 @@
     "myApi": "My API",
     "groupM365": "M365",
     "mail": "메일",
-    "calendar": "일정"
+    "calendar": "일정",
+    "teams": "팀즈"
   },
   "header": {
     "search": "앱 검색...",

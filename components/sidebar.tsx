@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { KeyRound, Inbox, CalendarDays, ChevronDown } from "lucide-react";
+import { KeyRound, Inbox, CalendarDays, MessageSquare, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({
@@ -49,6 +49,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       items: [
         { href: "/me/mail", label: t("nav.mail"), icon: Inbox },
         { href: "/me/calendar", label: t("nav.calendar"), icon: CalendarDays },
+        { href: "/me/teams", label: t("nav.teams"), icon: MessageSquare },
       ],
     },
   ];

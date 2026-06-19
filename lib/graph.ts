@@ -342,3 +342,58 @@ export async function listMyEvents(
   const data = (await res.json()) as { value?: GraphEvent[] };
   return (data.value ?? []).map(toEvent);
 }
+
+// ── Teams 1:1 알림 발송 — Chat.Create + ChatMessage.Send (위임) ──────────────
+// 로그인 사용자 명의로 특정 직원에게 1:1 메시지를 보낸다 → 받는 사람은 Teams 기본
+// 알림(토스트/뱃지/모바일)을 받는다. 자기 자신과는 1:1 채팅 생성 불가(400).
+
+/** 본인 명의로 특정 직원에게 Teams 1:1 메시지 발송. */
+export async function sendTeamsMessage(
+  accessToken: string,
+  fromUpn: string,
+  toUpn: string,
+  text: string,
+  html = false,
+): Promise<void> {
+  const member = (upn: string) => ({
+    "@odata.type": "#microsoft.graph.aadUserConversationMember",
+    roles: ["owner"],
+    "user@odata.bind": `https://graph.microsoft.com/v1.0/users('${upn}')`,
+  });
+  // 1) 1:1 채팅 생성/조회 (oneOnOne 은 이미 있으면 Graph 가 기존 채팅 반환)
+  const chatRes = await fetch("https://graph.microsoft.com/v1.0/chats", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chatType: "oneOnOne",
+      members: [member(fromUpn), member(toUpn)],
+    }),
+  });
+  if (!chatRes.ok) {
+    const d = await chatRes.text().catch(() => "");
+    throw new Error(`Graph /chats ${chatRes.status}: ${d.slice(0, 200)}`);
+  }
+  const chat = (await chatRes.json()) as { id?: string };
+  if (!chat.id) throw new Error("Teams 채팅 ID를 받지 못했습니다.");
+  // 2) 메시지 전송
+  const msgRes = await fetch(
+    `https://graph.microsoft.com/v1.0/chats/${chat.id}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        body: { contentType: html ? "html" : "text", content: text },
+      }),
+    },
+  );
+  if (!msgRes.ok) {
+    const d = await msgRes.text().catch(() => "");
+    throw new Error(`Graph /chats/{id}/messages ${msgRes.status}: ${d.slice(0, 200)}`);
+  }
+}

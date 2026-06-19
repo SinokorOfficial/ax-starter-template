@@ -8,7 +8,8 @@
     "myApi": "My API",
     "groupM365": "M365",
     "mail": "Mail",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "teams": "Teams"
   },
   "header": {
     "search": "Search apps...",

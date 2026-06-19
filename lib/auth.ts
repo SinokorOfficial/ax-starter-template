@@ -18,6 +18,9 @@ const DELEGATED_SCOPES = [
   "https://graph.microsoft.com/Mail.Read",
   "https://graph.microsoft.com/Mail.Send",
   "https://graph.microsoft.com/Calendars.Read",
+  // Teams 1:1 알림 발송. Chat.Create(채팅 생성) + ChatMessage.Send(메시지 전송) 위임.
+  "https://graph.microsoft.com/Chat.Create",
+  "https://graph.microsoft.com/ChatMessage.Send",
 ].join(" ");
 
 // ── 역할 판정 ───────────────────────────────────────────────
