@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { KeyRound, Inbox, CalendarDays, MessageSquare, ChevronDown } from "lucide-react";
+import {
+  KeyRound,
+  Inbox,
+  CalendarDays,
+  MessageSquare,
+  UserCircle,
+  ChevronDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({
@@ -16,8 +23,8 @@ export function Sidebar({
 }) {
   return (
     <>
-      {/* 데스크톱 */}
-      <aside className="hidden w-64 shrink-0 border-r bg-card md:block">
+      {/* 데스크톱 — 고정, 내부 스크롤 */}
+      <aside className="hidden w-64 shrink-0 overflow-y-auto border-r bg-card md:block">
         <SidebarBody />
       </aside>
 
@@ -50,6 +57,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         { href: "/me/mail", label: t("nav.mail"), icon: Inbox },
         { href: "/me/calendar", label: t("nav.calendar"), icon: CalendarDays },
         { href: "/me/teams", label: t("nav.teams"), icon: MessageSquare },
+        { href: "/me/profile", label: t("nav.profile"), icon: UserCircle },
       ],
     },
   ];

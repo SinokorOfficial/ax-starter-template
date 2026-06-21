@@ -9,7 +9,8 @@
     "groupM365": "M365",
     "mail": "メール",
     "calendar": "予定",
-    "teams": "Teams"
+    "teams": "Teams",
+    "profile": "マイ情報"
   },
   "header": {
     "search": "アプリ検索...",

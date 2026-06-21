@@ -9,7 +9,8 @@
     "groupM365": "M365",
     "mail": "Mail",
     "calendar": "Calendar",
-    "teams": "Teams"
+    "teams": "Teams",
+    "profile": "My Info"
   },
   "header": {
     "search": "Search apps...",

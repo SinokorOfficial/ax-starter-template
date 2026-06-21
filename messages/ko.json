@@ -9,7 +9,8 @@
     "groupM365": "M365",
     "mail": "메일",
     "calendar": "일정",
-    "teams": "팀즈"
+    "teams": "팀즈",
+    "profile": "내 정보"
   },
   "header": {
     "search": "앱 검색...",

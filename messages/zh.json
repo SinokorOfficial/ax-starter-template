@@ -9,7 +9,8 @@
     "groupM365": "M365",
     "mail": "邮件",
     "calendar": "日程",
-    "teams": "Teams"
+    "teams": "Teams",
+    "profile": "我的信息"
   },
   "header": {
     "search": "搜索应用...",
