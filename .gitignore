@@ -6,3 +6,7 @@ out
 *.log
 .DS_Store
 next-env.d.ts
+
+# TypeScript 증분 빌드 캐시
+tsconfig.tsbuildinfo
+*.tsbuildinfo
