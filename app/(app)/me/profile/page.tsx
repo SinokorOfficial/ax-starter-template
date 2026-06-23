@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { Loader2, AlertCircle, Mail, Building2, BadgeCheck, AtSign } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 
-// 내 정보 — 로그인 계정 인적사항(Microsoft 365 Graph /me). 헤더와 동일 BFF(/api/me/profile).
+// 내 정보 — 로그인 계정 인적사항(Microsoft 365 Graph /me) + 세션/신원(토큰 제외).
 interface MeProfile {
   displayName?: string | null;
   mail?: string | null;
@@ -13,12 +13,19 @@ interface MeProfile {
   department?: string | null;
   userPrincipalName?: string | null;
 }
+interface SsoClaims {
+  oid?: string | null;
+  upn?: string | null;
+  email?: string | null;
+}
 
 export default function MyProfilePage() {
   const { data: session } = useSession();
   const [profile, setProfile] = useState<MeProfile | null>(null);
+  const [sso, setSso] = useState<SsoClaims | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -30,6 +37,11 @@ export default function MyProfilePage() {
       .then((d) => alive && setProfile(d.profile))
       .catch((e) => alive && setError(e instanceof Error ? e.message : "조회 실패"))
       .finally(() => alive && setLoading(false));
+    // SSO 클레임(신원값) — 실패해도 무시(없으면 "—")
+    fetch("/api/debug/sso-claims", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && d?.claims && setSso(d.claims))
+      .catch(() => {});
     return () => {
       alive = false;
     };
@@ -39,12 +51,23 @@ export default function MyProfilePage() {
   const email = profile?.mail ?? session?.user?.email ?? "";
   const upn = profile?.userPrincipalName ?? session?.user?.email ?? "";
   const initial = name.charAt(0).toUpperCase() || "U";
+  const su = (session?.user ?? {}) as { id?: string; role?: string; email?: string };
 
   const fields = [
-    { icon: Building2, label: "부서", value: profile?.department },
-    { icon: BadgeCheck, label: "직책", value: profile?.jobTitle },
-    { icon: Mail, label: "이메일", value: email },
+    { icon: Building2, label: "부서(department)", value: profile?.department },
+    { icon: BadgeCheck, label: "직책(jobTitle)", value: profile?.jobTitle },
+    { icon: Mail, label: "이메일(mail)", value: email },
     { icon: AtSign, label: "계정(UPN)", value: upn },
+  ];
+
+  // 세션/신원 — 토큰 원문 제외, 식별자만.
+  const idRows: { label: string; value?: string | null }[] = [
+    { label: "계정 ID (session.id)", value: su.id },
+    { label: "역할 (role)", value: su.role },
+    { label: "세션 이메일 (session.email)", value: su.email },
+    { label: "oid (SSO_OID)", value: sso?.oid },
+    { label: "upn (SSO_UPN)", value: sso?.upn },
+    { label: "email (SSO_EMAIL)", value: sso?.email },
   ];
 
   return (
@@ -67,9 +90,20 @@ export default function MyProfilePage() {
         <div className="max-w-2xl rounded-lg border bg-card p-6 text-card-foreground">
           {/* 헤더 영역 */}
           <div className="flex items-center gap-4">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
-              {initial}
-            </span>
+            {photoFailed ? (
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
+                {initial}
+              </span>
+            ) : (
+              // 본인 프로필 사진 (Graph /me/photo) — 없으면 이니셜 폴백
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="/api/me/photo"
+                alt="프로필 사진"
+                className="h-16 w-16 rounded-full object-cover"
+                onError={() => setPhotoFailed(true)}
+              />
+            )}
             <div className="leading-tight">
               <div className="text-xl font-semibold">{name || "—"}</div>
               <div className="mt-0.5 text-sm text-muted-foreground">
@@ -93,6 +127,30 @@ export default function MyProfilePage() {
               );
             })}
           </dl>
+
+          {/* 세션 / 신원 (토큰 제외) */}
+          <div className="mt-6 border-t pt-6">
+            <div className="text-sm font-semibold">세션 / 신원</div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              로그인 세션과 SSO 토큰의 신원값입니다. (토큰 원문은 표시하지 않습니다)
+            </p>
+            <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+              {idRows.map((r) => (
+                <div key={r.label} className="min-w-0 leading-tight">
+                  <dt className="text-xs text-muted-foreground">{r.label}</dt>
+                  <dd className="mt-0.5 truncate font-mono text-xs">
+                    {r.value ? (
+                      r.value
+                    ) : (
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                        (비어있음)
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
         </div>
       )}
     </div>

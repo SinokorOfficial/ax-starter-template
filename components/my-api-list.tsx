@@ -100,6 +100,7 @@ function buildCopyText(g: ApiGroup): string {
     `이름: ${title}`,
     desc ? `설명: ${desc}` : "",
     "호출: 브라우저에서 POST /api/internal (SSO 자동 인증, 키 불필요).",
+    "주의: user_name 은 스키마 소유자(고정값)입니다 — 사용자 이메일이 아니며 그대로 두세요. 로그인 사용자 신원(oid/upn/email)은 서버가 SSO 토큰에서 자동 주입하므로 params 에 넣지 마세요.",
     "요청 body(JSON):",
     JSON.stringify(body, null, 2),
     "응답: { code, message, data } — data 는 결과 행 배열.",
@@ -242,7 +243,7 @@ export function MyApiList() {
           </div>
 
           {visible!.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {visible!.map((g, i) => {
                 const r = g.api;
                 const id = r.OBJECT_ID || String(i);
@@ -265,29 +266,33 @@ export function MyApiList() {
                           type="button"
                           onClick={() => copyApi(g, id)}
                           title={t("copyForLlm")}
-                          className="flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground hover:bg-accent hover:text-foreground"
+                          className="flex h-7 w-7 items-center justify-center rounded-md border text-muted-foreground hover:bg-accent hover:text-foreground"
                         >
                           {copiedId === id ? (
-                            <Check className="h-4 w-4 text-emerald-600" />
+                            <Check className="h-3.5 w-3.5 text-emerald-600" />
                           ) : (
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-3.5 w-3.5" />
                           )}
                         </button>
-                        <Button size="sm" onClick={() => setTestGroup(g)}>
-                          <Play className="h-4 w-4" /> {t("test")}
+                        <Button size="sm" className="h-7" onClick={() => setTestGroup(g)}>
+                          <Play className="h-3.5 w-3.5" /> {t("test")}
                         </Button>
                       </div>
                     </div>
-                    <h3 className="mt-3 text-base font-semibold">{objectDesc}</h3>
+                    <h3 className="mt-2.5 line-clamp-2 text-sm font-semibold" title={objectDesc}>
+                      {objectDesc}
+                    </h3>
                     {llmDesc && (
-                      <p className="mt-1 text-sm text-muted-foreground">{llmDesc}</p>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{llmDesc}</p>
                     )}
                     {llmSynonym && (
-                      <p className="mt-0.5 text-sm text-muted-foreground">{llmSynonym}</p>
+                      <p className="line-clamp-1 text-xs text-muted-foreground">{llmSynonym}</p>
                     )}
-                    <div className="mt-auto pt-3 text-xs text-muted-foreground">
-                      {t("owner")}: {r.OWNER || "—"}
-                      {path && <code className="mt-1 block truncate">{path}</code>}
+                    <div className="mt-3 border-t pt-2 text-xs text-muted-foreground">
+                      <div className="truncate">
+                        {t("owner")}: {r.OWNER || "—"}
+                      </div>
+                      {path && <code className="mt-0.5 block truncate">{path}</code>}
                     </div>
                   </div>
                 );
