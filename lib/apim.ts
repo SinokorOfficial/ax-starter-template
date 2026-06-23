@@ -7,6 +7,8 @@
 const TENANT = process.env.ENTRA_TENANT_ID ?? "";
 const CLIENT_ID = process.env.ENTRA_CLIENT_ID ?? "";
 const CLIENT_SECRET = process.env.ENTRA_CLIENT_SECRET ?? "";
+// secret 없으면 퍼블릭 클라이언트(PKCE) — refresh 그랜트에서 client_secret 미전송.
+const IS_CONFIDENTIAL = CLIENT_SECRET.length > 0;
 
 // ⚠️ 공유 APIM API 의 scope (각 앱의 client 가 아니라!). 모든 사내 앱이 같은 APIM 을
 // 호출하므로 audience 는 이 공유 API 로 고정된다. 새 앱은 이 API 에 pre-authorize 만 받으면 됨.
@@ -27,18 +29,19 @@ export async function getApimAccessToken(refreshToken: string): Promise<string> 
   const cached = apimTokenCache.get(refreshToken);
   if (cached && cached.exp > now + 60_000) return cached.token;
 
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    scope: `${APIM_SCOPE} offline_access`,
+  });
+  if (IS_CONFIDENTIAL) params.set("client_secret", CLIENT_SECRET);
   const res = await fetch(
     `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`,
     {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-        scope: `${APIM_SCOPE} offline_access`,
-      }),
+      body: params,
       cache: "no-store",
     },
   );

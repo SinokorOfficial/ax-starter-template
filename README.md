@@ -20,7 +20,7 @@ git clone <레포주소> my-app && cd my-app
 # 2) 의존성 설치
 npm install
 
-# 3) 환경변수 — .env.local.example 복사 후 값 채우기 (값은 강사/관리자에게 받기)
+# 3) 환경변수 — .env.local.example 복사
 cp .env.local.example .env.local
 
 # 4) 실행
@@ -28,34 +28,35 @@ npm run dev
 # → http://localhost:3000 → Microsoft 계정으로 로그인 → 코딩 시작!
 ```
 
-`.env.local` 에 **직접 채워야 하는 값은 3개**뿐입니다 (나머지는 기본값 그대로 OK):
-| 변수 | 채울 값 |
+**로컬은 secret 이 필요 없습니다 (PKCE 로그인).** `.env.local` 에서 채울 값은 **`NEXTAUTH_SECRET` 하나**뿐이고, 그것도 Claude 에게 시키면 됩니다:
+
+```
+.env.local 의 NEXTAUTH_SECRET 을 무작위로 만들어서 채워줘.
+```
+
+| 변수 | 처리 |
 |---|---|
-| ⭐ `NEXTAUTH_SECRET` | `openssl rand -base64 32` 로 생성 (앱마다 임의값) |
-| ⭐ `ENTRA_CLIENT_ID` | 사용할 앱 등록의 client id — **강사/관리자에게 받기** |
-| ⭐ `ENTRA_CLIENT_SECRET` | 위 앱 등록의 client secret — **받기 · 절대 커밋 금지** |
+| `NEXTAUTH_SECRET` | Claude 가 생성(또는 `openssl rand -base64 32`) — 로컬 전용 난수 |
+| `ENTRA_CLIENT_ID` · `ENTRA_TENANT_ID` | **이미 채워져 있음**(비밀 아님) — 그대로 |
+| `NEXTAUTH_URL` | `http://localhost:3000` (그대로) |
 
-이미 채워져 있어 안 건드려도 되는 값: `NEXTAUTH_URL`(로컬), `ENTRA_TENANT_ID`(시노코 테넌트), `APIM_SP_URL`(SSO 엔드포인트). `APIM_SCOPE`·`APIM_PORTAL_KEY`는 **비워두기**(키리스).
-
-> ⚠️ `ENTRA_CLIENT_SECRET` 은 **절대 레포에 커밋하지 마세요.** `.env.local` 은 `.gitignore` 에 포함돼 있습니다.
+> 🔒 `ENTRA_CLIENT_SECRET` 은 **로컬에서 불필요**합니다. 운영 배포 때만 AX팀이 설정하면 같은 코드가 자동으로 confidential 모드로 전환됩니다. (secret 유무로 PKCE↔confidential 자동 분기)
 
 ---
 
 ## ✅ 사전 준비 (Entra 쪽, 코드 밖 · 1회)
 
-`.env.local` 을 채워도 아래가 안 돼 있으면 로그인/기능이 막힙니다. **공유 `SinokorAiPortal` 등록을 재사용하면 1·2는 보통 이미 돼 있습니다.**
+기본 등록 **`SinokorAxStarter`** 는 이미 아래가 모두 구성돼 있어, 교육생은 **추가 작업 없이** 로그인·My API·M365 가 됩니다.
 
-1. **리디렉션 URI 등록** — 쓰는 앱 등록에 `<NEXTAUTH_URL>/api/auth/callback/azure-ad` 가 있어야 로그인 콜백이 됩니다.
-   - 로컬: `http://localhost:3000/api/auth/callback/azure-ad`
-   - 배포: `https://<운영도메인>/api/auth/callback/azure-ad`
-2. **M365(메일·일정) 사용 시 — 관리자 동의** — 앱 등록 *API 권한*에 위임 권한 추가 + **관리자 동의**:
-   - `Mail.Read` · `Mail.Send` · `Calendars.Read` (+ 기본 `User.Read` · `Chat.Read`)
-   - 미동의 시: **로그인·My API 는 정상**, 메일/일정 화면만 권한 오류. 스코프 추가/동의 후엔 **로그아웃→재로그인** 해야 새 권한이 토큰에 반영됩니다.
+- **리디렉션 URI** — `http://localhost:3000/api/auth/callback/azure-ad` 가 **모바일/데스크톱 플랫폼**(퍼블릭·PKCE)에 등록됨 + "퍼블릭 클라이언트 흐름 허용" ON.
+- **위임 권한 + 관리자 동의** — `User.Read` · `Mail.Read` · `Mail.Send` · `Calendars.Read` · `Chat.Read` · `Chat.Create` · `ChatMessage.Send` 완료.
+- **APIM pre-authorize** — `SinokorAxStarter` 가 공유 APIM API 에 등록됨(SSO 호출 audience 일치).
 
 | 하려는 것 | 필요 조건 |
 |---|---|
-| 로그인 + My API(SSO) | `.env.local` 3개 값 + 리디렉션 URI |
-| + 메일/일정(M365) | 위 + M365 스코프 **관리자 동의** + 재로그인 |
+| 로그인 + My API(SSO) | `NEXTAUTH_SECRET` 만 채우면 끝 (secret 불필요) |
+| 메일/일정/Teams(M365) | 추가 작업 없음 (권한·동의 완료) |
+| 운영 배포 | AX팀이 운영 도메인 redirect(웹) + `ENTRA_CLIENT_SECRET` 설정 |
 
 ---
 

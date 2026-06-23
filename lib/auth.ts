@@ -2,6 +2,10 @@ import type { NextAuthOptions } from "next-auth";
 import AzureADProvider from "next-auth/providers/azure-ad";
 
 const TENANT = process.env.ENTRA_TENANT_ID ?? "";
+const CLIENT_SECRET = process.env.ENTRA_CLIENT_SECRET ?? "";
+// secret 이 있으면 confidential(운영 배포), 없으면 public+PKCE(로컬 개발 — secret 노출 0).
+// 같은 코드가 .env 의 secret 유무로 두 모드를 자동 전환한다.
+const IS_CONFIDENTIAL = CLIENT_SECRET.length > 0;
 
 // 로그인 위임 스코프. Graph User.Read = 헤더 프로필(부서·직책)용.
 // APIM 스코프는 여기 넣지 않는다 — 한 토큰=한 audience 라, APIM 토큰은
@@ -68,18 +72,20 @@ async function fetchMeProfile(
 }
 
 async function refreshAccessToken(refreshToken: string) {
+  // 퍼블릭 클라이언트(secret 없음)는 refresh 그랜트에서 client_secret 을 보내지 않는다.
+  const params = new URLSearchParams({
+    client_id: process.env.ENTRA_CLIENT_ID ?? "",
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    scope: DELEGATED_SCOPES,
+  });
+  if (IS_CONFIDENTIAL) params.set("client_secret", CLIENT_SECRET);
   const res = await fetch(
     `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`,
     {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: process.env.ENTRA_CLIENT_ID ?? "",
-        client_secret: process.env.ENTRA_CLIENT_SECRET ?? "",
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-        scope: DELEGATED_SCOPES,
-      }),
+      body: params,
       cache: "no-store",
     },
   );
@@ -96,9 +102,15 @@ export const authOptions: NextAuthOptions = {
   providers: [
     AzureADProvider({
       clientId: process.env.ENTRA_CLIENT_ID ?? "",
-      clientSecret: process.env.ENTRA_CLIENT_SECRET ?? "",
+      clientSecret: CLIENT_SECRET,
       tenantId: process.env.ENTRA_TENANT_ID ?? "",
       authorization: { params: { scope: DELEGATED_SCOPES } },
+      // PKCE 명시 (azure-ad 는 기본 checks=["state"]만 → pkce 직접 추가).
+      checks: ["pkce", "state"],
+      // 퍼블릭 모드: 토큰 엔드포인트에 client_secret 미전송(secret 없이 로그인).
+      ...(IS_CONFIDENTIAL
+        ? {}
+        : { client: { token_endpoint_auth_method: "none" } }),
     }),
   ],
   session: { strategy: "jwt" },
