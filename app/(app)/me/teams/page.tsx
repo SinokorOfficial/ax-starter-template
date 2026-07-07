@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { Send, Loader2, CheckCircle2, MessageSquare, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/page-header";
+import { RecipientPicker, type Recipient } from "@/components/recipient-picker";
 import { sendTeamsNotify } from "@/lib/portal-client";
 
 export default function TeamsNotifyPage() {
-  const [to, setTo] = useState("");
+  const [to, setTo] = useState<Recipient[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,11 +22,11 @@ export default function TeamsNotifyPage() {
   const onSend = async () => {
     setError(null);
     setResult(null);
-    if (!to.trim()) return setError("받는 사람(직원 이메일)을 입력하세요.");
+    if (!to.length) return setError("받는 사람(직원)을 선택하세요.");
     if (!text.trim()) return setError("메시지 내용을 입력하세요.");
     setSending(true);
     try {
-      const r = await sendTeamsNotify({ to, text });
+      const r = await sendTeamsNotify({ to: to.map((r) => r.email).join(","), text });
       setResult({ sent: r.sent ?? [], failed: r.failed ?? [] });
       if ((r.sent?.length ?? 0) > 0) setText("");
     } catch (e) {
@@ -46,15 +46,15 @@ export default function TeamsNotifyPage() {
       <div className="max-w-xl space-y-4 rounded-lg border bg-card p-5">
         <div className="space-y-1">
           <Label htmlFor="to">받는 사람 *</Label>
-          <Input
+          <RecipientPicker
             id="to"
             value={to}
-            onChange={(e) => setTo(e.target.value)}
-            placeholder="user@sinokor.co.kr (여러 명은 , 로 구분)"
-            autoComplete="off"
+            onChange={setTo}
+            placeholder="이름 또는 이메일로 검색"
+            usersOnly
           />
           <p className="text-xs text-muted-foreground">
-            사내 이메일(UPN)로 입력. 본인은 자동 제외됩니다.
+            이름으로 검색해 선택. 본인은 자동 제외됩니다.
           </p>
         </div>
 

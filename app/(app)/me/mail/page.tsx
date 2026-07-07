@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader, EmptyState } from "@/components/page-header";
+import { RecipientPicker, type Recipient } from "@/components/recipient-picker";
 import {
   fetchMyMessages,
   fetchMessage,
@@ -328,8 +329,8 @@ export default function MyMailPage() {
 
 // ── 새 메일 작성(Compose) 모달 ──────────────────────────────────────────────
 function Compose({ onClose }: { onClose: () => void }) {
-  const [to, setTo] = useState("");
-  const [cc, setCc] = useState("");
+  const [to, setTo] = useState<Recipient[]>([]);
+  const [cc, setCc] = useState<Recipient[]>([]);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -338,11 +339,16 @@ function Compose({ onClose }: { onClose: () => void }) {
 
   const onSend = async () => {
     setError(null);
-    if (!to.trim()) return setError("받는 사람을 입력하세요.");
+    if (!to.length) return setError("받는 사람을 입력하세요.");
     if (!subject.trim()) return setError("제목을 입력하세요.");
     setSending(true);
     try {
-      await sendMail({ to, cc, subject, body });
+      await sendMail({
+        to: to.map((r) => r.email).join(","),
+        cc: cc.map((r) => r.email).join(","),
+        subject,
+        body,
+      });
       setSent(true);
       setTimeout(onClose, 1200);
     } catch (e) {
@@ -379,22 +385,22 @@ function Compose({ onClose }: { onClose: () => void }) {
           <div className="flex-1 space-y-3 overflow-auto p-4">
             <div className="space-y-1">
               <Label htmlFor="to">받는 사람 *</Label>
-              <Input
+              <RecipientPicker
                 id="to"
                 value={to}
-                onChange={(e) => setTo(e.target.value)}
-                placeholder="user@sinokor.co.kr (여러 명은 , 로 구분)"
-                autoComplete="off"
+                onChange={setTo}
+                placeholder="이름 또는 이메일로 검색"
+                usersOnly
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="cc">참조 (CC)</Label>
-              <Input
+              <RecipientPicker
                 id="cc"
                 value={cc}
-                onChange={(e) => setCc(e.target.value)}
-                placeholder="(선택) 참조 받을 이메일"
-                autoComplete="off"
+                onChange={setCc}
+                placeholder="(선택) 이름 또는 이메일로 검색"
+                usersOnly
               />
             </div>
             <div className="space-y-1">

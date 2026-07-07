@@ -31,6 +31,29 @@ export async function fetchMessage(id: string): Promise<MailDetail> {
   return data.message;
 }
 
+/** 사내 수신자(사람) 검색 결과 한 건. */
+export interface DirectoryHit {
+  kind: "user" | "group";
+  name: string;
+  email: string;
+  jobTitle: string | null;
+  department: string | null;
+  groupType: string | null;
+}
+
+/** GET /api/directory/people → 이름/이메일로 사내 사람 검색(수신자 선택용). */
+export async function searchRecipients(
+  q: string,
+  signal?: AbortSignal,
+): Promise<DirectoryHit[]> {
+  const res = await fetch(`/api/directory/people?q=${encodeURIComponent(q)}`, {
+    credentials: "same-origin",
+    signal,
+  });
+  const data = await asJson<{ recipients: DirectoryHit[] }>(res);
+  return data.recipients;
+}
+
 /** POST /api/me/messages/send → 본인 명의 메일 발송 */
 export async function sendMail(input: {
   to: string;

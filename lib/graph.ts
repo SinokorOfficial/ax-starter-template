@@ -26,6 +26,61 @@ export async function getMyProfile(accessToken?: string): Promise<MeProfile> {
   }
 }
 
+// ── 수신자 검색 (메일·Teams 받는 사람) — User.ReadBasic.All(위임) 필요 ────────
+// 로그인 사용자 토큰으로 /users?$search 조회. 앱 단독(시크릿)이 아니라 위임이므로
+// 스타터/HR(PKCE·시크릿 없음)에서도 동작한다.
+
+export interface DirectoryPerson {
+  name: string;
+  email: string;
+  jobTitle: string | null;
+  department: string | null;
+}
+
+interface GraphDirUser {
+  displayName?: string | null;
+  userPrincipalName?: string | null;
+  mail?: string | null;
+  jobTitle?: string | null;
+  department?: string | null;
+}
+
+/** 이름/이메일로 사내 사용자 검색(수신자 선택용). 2글자 미만은 빈 결과. */
+export async function searchDirectoryUsers(
+  accessToken: string,
+  q: string,
+  top = 8,
+): Promise<DirectoryPerson[]> {
+  const term = q.trim().replace(/"/g, "");
+  if (term.length < 2) return [];
+  const params = new URLSearchParams({
+    $select: "displayName,userPrincipalName,mail,jobTitle,department",
+    $top: String(top),
+    $count: "true", // $search 는 ConsistencyLevel:eventual + $count 필요
+    $search: `"displayName:${term}" OR "userPrincipalName:${term}" OR "mail:${term}"`,
+  });
+  const res = await fetch(`https://graph.microsoft.com/v1.0/users?${params}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ConsistencyLevel: "eventual",
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const d = await res.text().catch(() => "");
+    throw new Error(`Graph /users ${res.status}: ${d.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as { value?: GraphDirUser[] };
+  return (data.value ?? [])
+    .map((u) => ({
+      name: u.displayName || u.userPrincipalName || "",
+      email: u.mail || u.userPrincipalName || "",
+      jobTitle: u.jobTitle ?? null,
+      department: u.department ?? null,
+    }))
+    .filter((p) => p.email);
+}
+
 // ── Teams 채팅 (헤더 안읽음 드롭다운) — 스코프 Chat.Read(위임) 필요 ──────────
 export interface TeamsChat {
   id: string;

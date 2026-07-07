@@ -16,6 +16,9 @@ const DELEGATED_SCOPES = [
   "email",
   "offline_access",
   "https://graph.microsoft.com/User.Read",
+  // 수신자 검색(메일·Teams 받는 사람). 다른 사용자 기본 프로필 읽기 → 앱 등록에
+  // User.ReadBasic.All 위임 권한 + 관리자 동의 필요.
+  "https://graph.microsoft.com/User.ReadBasic.All",
   // Teams 안읽음 채팅(헤더 드롭다운). 공유 앱 등록은 Chat.Read 관리자 동의 완료.
   "https://graph.microsoft.com/Chat.Read",
   // M365 — 메일(읽기·발신)·일정(읽기). 앱 등록에 위임 권한 + 관리자 동의 필요.
