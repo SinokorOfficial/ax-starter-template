@@ -14,12 +14,9 @@
   },
   "header": {
     "search": "搜索应用...",
-    "teams": "Teams",
     "teamsTitle": "Teams 聊天",
     "unread": "未读",
     "teamsEmpty": "无聊天",
-    "theme": "主题",
-    "m365": "Microsoft 365",
     "language": "语言",
     "logout": "登出",
     "publicIp": "我的公网 IP (API 限制对象)",

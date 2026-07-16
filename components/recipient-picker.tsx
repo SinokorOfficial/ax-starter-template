@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Loader2, Search, Users } from "lucide-react";
+import { X, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Avatar as BaseAvatar } from "@/components/avatar";
 import { searchRecipients, type DirectoryHit } from "@/lib/portal-client";
 
 export interface Recipient {
@@ -14,28 +15,7 @@ export interface Recipient {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isEmail = (s: string) => EMAIL_RE.test(s.trim());
 
-// Outlook 처럼 이름별로 안정적인 아바타 색상(팔레트에서 해시 선택).
-const AVATAR_COLORS = [
-  "bg-rose-100 text-rose-700",
-  "bg-orange-100 text-orange-700",
-  "bg-amber-100 text-amber-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-teal-100 text-teal-700",
-  "bg-sky-100 text-sky-700",
-  "bg-indigo-100 text-indigo-700",
-  "bg-violet-100 text-violet-700",
-  "bg-fuchsia-100 text-fuchsia-700",
-];
-function colorOf(seed: string): string {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  return AVATAR_COLORS[h % AVATAR_COLORS.length];
-}
-function initial(s: string): string {
-  return s.trim().charAt(0).toUpperCase() || "?";
-}
-
-/** 사람/그룹 공용 아바타(그룹은 아이콘, 사람은 컬러 이니셜). */
+/** 사람/그룹 공용 아바타(그룹은 아이콘, 사람은 컬러 이니셜). 공용 Avatar 래퍼. */
 function Avatar({
   seed,
   kind,
@@ -45,29 +25,17 @@ function Avatar({
   kind?: "user" | "group";
   size?: "sm" | "md";
 }) {
-  const box = size === "sm" ? "h-5 w-5 text-[10px]" : "h-8 w-8 text-xs";
-  if (kind === "group") {
-    return (
-      <span
-        className={cn(
-          "flex shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground",
-          box,
-        )}
-      >
-        <Users className={size === "sm" ? "h-3 w-3" : "h-4 w-4"} />
-      </span>
-    );
-  }
+  const box = size === "sm" ? "h-5 w-5 shrink-0 text-[10px]" : "h-8 w-8 shrink-0 text-xs";
+  const icon = size === "sm" ? "h-3 w-3" : "h-4 w-4";
   return (
-    <span
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-semibold",
-        box,
-        colorOf(seed),
-      )}
-    >
-      {initial(seed)}
-    </span>
+    <BaseAvatar
+      name={seed}
+      kind={kind}
+      colorSeed={seed}
+      initialsCount={1}
+      className={cn(box, kind === "group" ? undefined : "font-semibold")}
+      iconClassName={icon}
+    />
   );
 }
 

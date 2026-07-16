@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PageHeader, EmptyState } from "@/components/page-header";
+import { PageHeader, EmptyState, ErrorState } from "@/components/page-header";
 import { RecipientPicker, type Recipient } from "@/components/recipient-picker";
 import {
   fetchMyMessages,
@@ -147,14 +147,16 @@ export default function MyMailPage() {
           <Loader2 className="h-4 w-4 animate-spin" /> 메일을 불러오는 중…
         </div>
       ) : error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
-          <p className="font-medium text-destructive">메일을 불러오지 못했습니다</p>
-          <p className="mt-1 text-muted-foreground">{error}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            실제 메일은 <strong>Mail.Read 권한이 포함된 Entra 로그인</strong>이 필요합니다.
-            (앱 등록에 Mail.Read 위임 권한 + 동의, 이후 재로그인)
-          </p>
-        </div>
+        <ErrorState
+          title="메일을 불러오지 못했습니다"
+          message={error}
+          hint={
+            <>
+              실제 메일은 <strong>Mail.Read 권한이 포함된 Entra 로그인</strong>이 필요합니다.
+              (앱 등록에 Mail.Read 위임 권한 + 동의, 이후 재로그인)
+            </>
+          }
+        />
       ) : messages.length === 0 ? (
         <EmptyState title="받은 메일이 없습니다" />
       ) : (

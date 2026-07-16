@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2, AlertCircle, Mail, Building2, BadgeCheck, AtSign } from "lucide-react";
-import { PageHeader } from "@/components/page-header";
+import { Mail, Building2, BadgeCheck, AtSign } from "lucide-react";
+import { PageHeader, LoadingRow, ErrorState } from "@/components/page-header";
+import { Avatar } from "@/components/avatar";
 
 // 내 정보 — 로그인 계정 인적사항(Microsoft 365 Graph /me) + 세션/신원(토큰 제외).
 interface MeProfile {
@@ -25,7 +26,6 @@ export default function MyProfilePage() {
   const [sso, setSso] = useState<SsoClaims | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -50,7 +50,6 @@ export default function MyProfilePage() {
   const name = profile?.displayName ?? session?.user?.name ?? session?.user?.email ?? "";
   const email = profile?.mail ?? session?.user?.email ?? "";
   const upn = profile?.userPrincipalName ?? session?.user?.email ?? "";
-  const initial = name.charAt(0).toUpperCase() || "U";
   const su = (session?.user ?? {}) as { id?: string; role?: string; email?: string };
 
   const fields = [
@@ -78,32 +77,21 @@ export default function MyProfilePage() {
       />
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> 불러오는 중…
-        </div>
+        <LoadingRow label="불러오는 중…" />
       ) : error ? (
-        <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-          <p className="text-muted-foreground">{error}</p>
-        </div>
+        <ErrorState icon message={error} />
       ) : (
         <div className="max-w-2xl rounded-lg border bg-card p-6 text-card-foreground">
           {/* 헤더 영역 */}
           <div className="flex items-center gap-4">
-            {photoFailed ? (
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
-                {initial}
-              </span>
-            ) : (
-              // 본인 프로필 사진 (Graph /me/photo) — 없으면 이니셜 폴백
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src="/api/me/photo"
-                alt="프로필 사진"
-                className="h-16 w-16 rounded-full object-cover"
-                onError={() => setPhotoFailed(true)}
-              />
-            )}
+            {/* 본인 프로필 사진 (Graph /me/photo) — 없으면 이니셜 폴백 */}
+            <Avatar
+              name={name}
+              photoSrc="/api/me/photo"
+              className="h-16 w-16 text-2xl font-bold"
+              initialsCount={1}
+              fallback="U"
+            />
             <div className="leading-tight">
               <div className="text-xl font-semibold">{name || "—"}</div>
               <div className="mt-0.5 text-sm text-muted-foreground">

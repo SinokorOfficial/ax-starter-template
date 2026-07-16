@@ -12,7 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeader, EmptyState } from "@/components/page-header";
+import { PageHeader, EmptyState, ErrorState } from "@/components/page-header";
 import { fetchMyEvents } from "@/lib/portal-client";
 import type { CalendarEvent } from "@/lib/types";
 
@@ -185,14 +185,16 @@ export default function MyCalendarPage() {
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
-          <p className="font-medium text-destructive">일정을 불러오지 못했습니다</p>
-          <p className="mt-1 text-muted-foreground">{error}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            실제 일정은 <strong>Calendars.Read 권한이 포함된 Entra 로그인</strong>이 필요합니다.
-            (앱 등록에 Calendars.Read 위임 권한 + 동의, 이후 재로그인)
-          </p>
-        </div>
+        <ErrorState
+          title="일정을 불러오지 못했습니다"
+          message={error}
+          hint={
+            <>
+              실제 일정은 <strong>Calendars.Read 권한이 포함된 Entra 로그인</strong>이 필요합니다.
+              (앱 등록에 Calendars.Read 위임 권한 + 동의, 이후 재로그인)
+            </>
+          }
+        />
       ) : view === "calendar" ? (
         <CalendarGrid
           gridDays={gridDays}
