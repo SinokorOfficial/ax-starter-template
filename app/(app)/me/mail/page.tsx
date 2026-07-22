@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader, EmptyState, ErrorState, Spinner } from "@/components/page-header";
+import { ThreePane, PaneHeader } from "@/components/three-pane";
 import { RecipientPicker, type Recipient } from "@/components/recipient-picker";
 import {
   fetchMyMessages,
@@ -206,6 +207,10 @@ export default function MyMailPage() {
 
   const srcDoc = useMemo(() => (detail ? buildSrcDoc(detail) : ""), [detail]);
 
+  // 2pane 헤더용 — 현재 선택 폴더명(없으면 받은 편지함).
+  const selectedFolderName =
+    findFolderIn(folders, selectedFolderId)?.displayName ?? "받은 편지함";
+
   return (
     <div className="flex h-full flex-col">
       <PageHeader
@@ -237,64 +242,65 @@ export default function MyMailPage() {
         />
       )}
 
-      <div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border">
-        {/* ── 좌측: 내 메일 폴더 트리 (데스크톱) ── */}
-        {!foldersError && (
-          <div className="hidden w-56 shrink-0 flex-col overflow-y-auto border-r p-2 md:flex">
-            {foldersLoading ? (
-              <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> 폴더…
-              </div>
-            ) : (
-              folders.map((f) => (
-                <FolderNode
-                  key={f.id}
-                  folder={f}
-                  depth={0}
-                  selectedFolderId={selectedFolderId}
-                  onSelect={selectFolder}
-                  childCache={childCache}
-                  loadingChildIds={loadingChildIds}
-                  onLoadChildren={loadChildFolders}
-                />
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ── 중앙 + 우측: 목록 + 본문 ── */}
-        <div className="flex min-w-0 flex-1 overflow-hidden">
-          {loading ? (
-            <div className="flex flex-1 items-start gap-2 p-8 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> 메일을 불러오는 중…
-            </div>
-          ) : error ? (
-            <div className="flex-1 overflow-y-auto p-4">
-              <ErrorState
-                title="메일을 불러오지 못했습니다"
-                message={error}
-                hint={
-                  <>
-                    실제 메일은{" "}
-                    <strong>Mail.Read 권한이 포함된 Entra 로그인</strong>이
-                    필요합니다. (앱 등록에 Mail.Read 위임 권한 + 동의, 이후 재로그인)
-                  </>
-                }
-              />
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex-1 overflow-y-auto p-4">
-              <EmptyState title="받은 메일이 없습니다" />
+      <ThreePane
+        storageKey="me-mail"
+        leftTitle="폴더"
+        leftCount={folders.length}
+        defaultLeftWidth={224}
+        defaultListWidth={380}
+        detailActive={!!selectedId}
+        left={
+          foldersError ? undefined : foldersLoading ? (
+            <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> 폴더…
             </div>
           ) : (
-            <>
-              {/* ── 중앙: 목록 ── */}
-              <ul
-                className={cn(
-                  "w-full divide-y overflow-y-auto md:w-[380px] md:shrink-0 md:border-r",
-                  selectedId && "hidden md:block",
-                )}
-              >
+            folders.map((f) => (
+              <FolderNode
+                key={f.id}
+                folder={f}
+                depth={0}
+                selectedFolderId={selectedFolderId}
+                onSelect={selectFolder}
+                childCache={childCache}
+                loadingChildIds={loadingChildIds}
+                onLoadChildren={loadChildFolders}
+              />
+            ))
+          )
+        }
+        list={(listApi) => (
+          <>
+            <PaneHeader
+              title={selectedFolderName}
+              count={loading ? undefined : messages.length}
+              onCollapse={() => listApi.collapse()}
+              collapseLabel="목록 접기"
+            />
+            {loading ? (
+              <div className="flex min-h-0 flex-1 items-start gap-2 p-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> 메일을 불러오는 중…
+              </div>
+            ) : error ? (
+              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                <ErrorState
+                  title="메일을 불러오지 못했습니다"
+                  message={error}
+                  hint={
+                    <>
+                      실제 메일은{" "}
+                      <strong>Mail.Read 권한이 포함된 Entra 로그인</strong>이
+                      필요합니다. (앱 등록에 Mail.Read 위임 권한 + 동의, 이후 재로그인)
+                    </>
+                  }
+                />
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                <EmptyState title="받은 메일이 없습니다" />
+              </div>
+            ) : (
+              <ul className="min-h-0 flex-1 divide-y overflow-y-auto">
                 {messages.map((m) => {
                   const isRead = m.isRead || readIds.has(m.id);
                   const active = m.id === selectedId;
@@ -346,114 +352,104 @@ export default function MyMailPage() {
                   );
                 })}
               </ul>
-
-              {/* ── 우측: 본문 ── */}
-              <div
-                className={cn(
-                  "min-w-0 flex-1 flex-col",
-                  selectedId ? "flex" : "hidden md:flex",
+            )}
+          </>
+        )}
+        detail={
+          !selectedId ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Mail className="h-8 w-8 opacity-40" />
+              읽을 메일을 선택하세요.
+            </div>
+          ) : detailLoading ? (
+            <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> 본문을 불러오는 중…
+            </div>
+          ) : detailError ? (
+            <div className="p-6 text-sm">
+              <p className="font-medium text-destructive">
+                본문을 불러오지 못했습니다
+              </p>
+              <p className="mt-1 text-muted-foreground">{detailError}</p>
+            </div>
+          ) : detail ? (
+            <>
+              <div className="shrink-0 border-b p-4">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <h2 className="text-lg font-semibold leading-snug">
+                    {detail.subject}
+                  </h2>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {detail.hasAttachments && (
+                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    {detail.webLink && (
+                      <a
+                        href={detail.webLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label="Outlook에서 열기"
+                        title="Outlook에서 열기"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="md:hidden"
+                      onClick={() => setSelectedId(null)}
+                      aria-label="목록으로"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-sm font-medium">
+                  {detail.fromName}
+                  {detail.fromAddress && (
+                    <span className="ml-1 font-normal text-muted-foreground">
+                      &lt;{detail.fromAddress}&gt;
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  {fmt(detail.receivedAt)}
+                </div>
+                {detail.toRecipients.length > 0 && (
+                  <div className="mt-1 truncate text-xs text-muted-foreground">
+                    받는 사람: {detail.toRecipients.join(", ")}
+                  </div>
                 )}
-              >
-                {!selectedId ? (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-8 w-8 opacity-40" />
-                    읽을 메일을 선택하세요.
+                {detail.ccRecipients.length > 0 && (
+                  <div className="truncate text-xs text-muted-foreground">
+                    참조: {detail.ccRecipients.join(", ")}
                   </div>
-                ) : detailLoading ? (
-                  <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> 본문을 불러오는 중…
-                  </div>
-                ) : detailError ? (
-                  <div className="p-6 text-sm">
-                    <p className="font-medium text-destructive">
-                      본문을 불러오지 못했습니다
-                    </p>
-                    <p className="mt-1 text-muted-foreground">{detailError}</p>
-                  </div>
-                ) : detail ? (
-                  <>
-                    {/* 본문 헤더 */}
-                    <div className="shrink-0 border-b p-4">
-                      <div className="mb-2 flex items-start justify-between gap-2">
-                        <h2 className="text-lg font-semibold leading-snug">
-                          {detail.subject}
-                        </h2>
-                        <div className="flex shrink-0 items-center gap-1">
-                          {detail.hasAttachments && (
-                            <Paperclip className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          {detail.webLink && (
-                            <a
-                              href={detail.webLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-muted-foreground hover:text-foreground"
-                              aria-label="Outlook에서 열기"
-                              title="Outlook에서 열기"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          )}
-                          {/* 모바일: 목록으로 */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="md:hidden"
-                            onClick={() => setSelectedId(null)}
-                            aria-label="목록으로"
-                          >
-                            <ArrowLeft className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="text-sm font-medium">
-                        {detail.fromName}
-                        {detail.fromAddress && (
-                          <span className="ml-1 font-normal text-muted-foreground">
-                            &lt;{detail.fromAddress}&gt;
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-0.5 text-xs text-muted-foreground">
-                        {fmt(detail.receivedAt)}
-                      </div>
-                      {detail.toRecipients.length > 0 && (
-                        <div className="mt-1 truncate text-xs text-muted-foreground">
-                          받는 사람: {detail.toRecipients.join(", ")}
-                        </div>
-                      )}
-                      {detail.ccRecipients.length > 0 && (
-                        <div className="truncate text-xs text-muted-foreground">
-                          참조: {detail.ccRecipients.join(", ")}
-                        </div>
-                      )}
-                      <div className="mt-3 flex gap-2">
-                        <Button size="sm" onClick={() => setReplyMode("reply")}>
-                          <Reply className="h-4 w-4" />회신
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setReplyMode("replyAll")}
-                        >
-                          <ReplyAll className="h-4 w-4" />전체 회신
-                        </Button>
-                      </div>
-                    </div>
-                    {/* 본문 (격리 iframe) */}
-                    <iframe
-                      title="메일 본문"
-                      className="min-h-0 w-full flex-1 bg-white"
-                      sandbox="allow-popups allow-popups-to-escape-sandbox"
-                      srcDoc={srcDoc}
-                    />
-                  </>
-                ) : null}
+                )}
+                <div className="mt-3 flex gap-2">
+                  <Button size="sm" onClick={() => setReplyMode("reply")}>
+                    <Reply className="h-4 w-4" />회신
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReplyMode("replyAll")}
+                  >
+                    <ReplyAll className="h-4 w-4" />전체 회신
+                  </Button>
+                </div>
               </div>
+              <iframe
+                title="메일 본문"
+                className="min-h-0 w-full flex-1 bg-white"
+                sandbox="allow-popups allow-popups-to-escape-sandbox"
+                srcDoc={srcDoc}
+              />
             </>
-          )}
-        </div>
-      </div>
+          ) : null
+        }
+      />
     </div>
   );
 }
