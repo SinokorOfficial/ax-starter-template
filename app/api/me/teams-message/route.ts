@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 import { getCurrentSessionUser } from "@/lib/session";
 import { sendTeamsMessage } from "@/lib/graph";
+import { resolveMeGraphToken } from "@/lib/me-graph-token";
 
 // BFF — 로그인 사용자 명의로 직원(들)에게 Teams 1:1 메시지(알림) 발송.
 // 위임 권한 Chat.Create + ChatMessage.Send 필요. 세션 필수.
@@ -41,24 +41,12 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
 
-  const jwt = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  if (jwt?.error === "RefreshAccessTokenError") {
-    return NextResponse.json(
-      { error: "relogin_required", message: "세션이 만료됐습니다. 다시 로그인해 주세요." },
-      { status: 409 },
-    );
-  }
-  if (!jwt?.accessToken) {
-    return NextResponse.json(
-      {
-        error: "relogin_required",
-        message:
-          "Teams 발송 권한(Chat.Create·ChatMessage.Send)이 포함된 Entra 로그인이 필요합니다. 로그아웃 후 다시 로그인해 주세요.",
-      },
-      { status: 409 },
-    );
-  }
-  const accessToken = jwt.accessToken;
+  const auth = await resolveMeGraphToken(
+    req,
+    "Teams 발송 권한(Chat.Create·ChatMessage.Send)이 포함된 Entra 로그인이 필요합니다. 로그아웃 후 다시 로그인해 주세요.",
+  );
+  if ("response" in auth) return auth.response;
+  const { accessToken } = auth;
   const fromUpn = myEmail;
 
   // 각 수신자에게 개별 발송. 일부 실패해도 나머지는 진행하고 결과를 모아 반환.

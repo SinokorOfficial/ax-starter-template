@@ -1,7 +1,7 @@
 // 서버 전용 — 본인 Graph 호출 (delegated). 로그인 사용자의 토큰으로 /me/* 접근.
 // 헤더 프로필·Teams 채팅 + M365(메일·일정). 토큰 없거나 Graph 실패 시 throw → 호출부(BFF)에서 처리.
 
-import type { MailMessage, MailDetail, CalendarEvent } from "./types";
+import type { MailMessage, MailDetail, MailFolder, CalendarEvent } from "./types";
 
 export interface MeProfile {
   displayName?: string;
@@ -187,20 +187,180 @@ function toMail(m: GraphMessage): MailMessage {
   };
 }
 
-/** 받은 메일 목록(최신순). GET /me/messages, Mail.Read 위임 필요. */
+// ── 메일 폴더 트리 (Outlook) — Mail.Read (위임) ──────────────────────────────
+
+// 시스템 폴더(잘 알려진 이름) — 사용자 폴더 아래로, 이 순서대로 배치(Outlook 유사).
+const SYSTEM_FOLDER_ORDER = [
+  "drafts",
+  "sentitems",
+  "deleteditems",
+  "junkemail",
+  "archive",
+  "outbox",
+  "conversationhistory",
+] as const;
+
+interface GraphMailFolder {
+  id: string;
+  displayName: string | null;
+  unreadItemCount: number | null;
+  totalItemCount: number | null;
+  childFolderCount?: number | null;
+  childFolders?: GraphMailFolder[];
+}
+
+function toMailFolder(f: GraphMailFolder): MailFolder {
+  const children = (f.childFolders ?? []).map(toMailFolder);
+  return {
+    id: f.id,
+    displayName: f.displayName ?? "(이름 없음)",
+    unreadCount: f.unreadItemCount ?? 0,
+    totalCount: f.totalItemCount ?? 0,
+    // 하위 폴더 존재 여부 — 아직 로드 전이라도 chevron 을 띄워 lazy expand 를 허용.
+    hasChildren: (f.childFolderCount ?? 0) > 0,
+    children,
+  };
+}
+
+// 폴더 이름순(가나다·ABC) 비교자 — 하위 폴더 정렬 공용.
+function byFolderName(a: MailFolder, b: MailFolder): number {
+  return a.displayName.localeCompare(b.displayName, "en");
+}
+
+/**
+ * 본인 메일 폴더 트리(최상위 + 한 단계 하위). 받은편지함은 isInbox 로 표시.
+ * GET /me/mailFolders, Mail.Read 위임 필요.
+ */
+export async function listMailFolders(
+  accessToken: string,
+): Promise<MailFolder[]> {
+  const select = "id,displayName,unreadItemCount,totalItemCount,childFolderCount";
+  const url =
+    `https://graph.microsoft.com/v1.0/me/mailFolders?$top=100&$select=${select}` +
+    `&$expand=childFolders($select=${select};$top=100)`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Graph /me/mailFolders ${res.status}: ${detail.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as { value?: GraphMailFolder[] };
+  const folders = (data.value ?? []).map(toMailFolder);
+
+  // 받은편지함 id 확인 후 최상위 폴더에 isInbox 표시(실패해도 나머지는 그대로 반환).
+  try {
+    const inboxRes = await fetch(
+      "https://graph.microsoft.com/v1.0/me/mailFolders/inbox?$select=id",
+      { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" },
+    );
+    if (inboxRes.ok) {
+      const inbox = (await inboxRes.json()) as { id?: string };
+      if (inbox.id) {
+        const hit = folders.find((f) => f.id === inbox.id);
+        if (hit) hit.isInbox = true;
+      }
+    }
+  } catch {
+    // 받은편지함 확인 실패 — 폴더 목록은 그대로 반환(우아한 저하).
+  }
+
+  // 시스템(잘 알려진) 폴더 id 를 확인해 사용자 폴더 아래로 내린다(Outlook 순서).
+  // $batch 로 한 번에 조회. 없는 폴더(404)는 무시.
+  const systemRank = new Map<string, number>();
+  try {
+    const batchRes = await fetch("https://graph.microsoft.com/v1.0/$batch", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        requests: SYSTEM_FOLDER_ORDER.map((name, i) => ({
+          id: String(i),
+          method: "GET",
+          url: `/me/mailFolders/${name}?$select=id`,
+        })),
+      }),
+    });
+    if (batchRes.ok) {
+      const bj = (await batchRes.json()) as {
+        responses?: { id: string; status: number; body?: { id?: string } }[];
+      };
+      for (const r of bj.responses ?? []) {
+        if (r.status === 200 && r.body?.id) systemRank.set(r.body.id, Number(r.id));
+      }
+    }
+  } catch {
+    // 식별 실패 — 시스템 폴더도 사용자 폴더처럼 취급(정렬만 못할 뿐 목록은 정상).
+  }
+
+  // 정렬: 받은편지함(맨 위) → 사용자 폴더(이름순) → 시스템 폴더(Outlook 순서).
+  const rankOf = (f: MailFolder) =>
+    f.isInbox ? -1 : systemRank.has(f.id) ? 1000 + (systemRank.get(f.id) ?? 0) : 500;
+  folders.sort((a, b) => {
+    const d = rankOf(a) - rankOf(b);
+    // 같은 그룹(사용자 폴더)끼리는 이름순. 시스템 폴더는 rank 로 이미 고정.
+    return d !== 0 ? d : byFolderName(a, b);
+  });
+  return folders;
+}
+
+/**
+ * 특정 폴더의 하위 폴더만 lazy 로드(펼칠 때 호출). 각 자식도 hasChildren 로 더 깊게 확장 가능.
+ * GET /me/mailFolders/{id}/childFolders, Mail.Read 위임 필요.
+ */
+export async function listChildFolders(
+  parentId: string,
+  accessToken: string,
+): Promise<MailFolder[]> {
+  const select = "id,displayName,unreadItemCount,totalItemCount,childFolderCount";
+  const url = `https://graph.microsoft.com/v1.0/me/mailFolders/${encodeURIComponent(
+    parentId,
+  )}/childFolders?$top=100&$select=${select}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(
+      `Graph /me/mailFolders/${parentId}/childFolders ${res.status}: ${detail.slice(0, 200)}`,
+    );
+  }
+  const data = (await res.json()) as { value?: GraphMailFolder[] };
+  return (data.value ?? []).map(toMailFolder).sort(byFolderName);
+}
+
+/** folderId 가 실제 하위 폴더를 가리키는지(= 받은편지함이 아닌지) 판별. */
+function isNonInboxFolder(folderId?: string): boolean {
+  return Boolean(folderId) && folderId !== "inbox";
+}
+
+/**
+ * 받은 메일 목록(최신순). GET /me/messages, Mail.Read 위임 필요.
+ * folderId 지정 시 해당 폴더(/me/mailFolders/{id}/messages)를, 그 외에는 기본 받은편지함.
+ */
 export async function listMyMessages(
   accessToken: string,
   top = 20,
+  folderId?: string,
 ): Promise<MailMessage[]> {
   const params = new URLSearchParams({
     $select: "id,subject,from,bodyPreview,receivedDateTime,isRead,webLink",
     $top: String(top),
     $orderby: "receivedDateTime desc",
   });
-  const res = await fetch(
-    `https://graph.microsoft.com/v1.0/me/messages?${params}`,
-    { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" },
-  );
+  const url = isNonInboxFolder(folderId)
+    ? `https://graph.microsoft.com/v1.0/me/mailFolders/${encodeURIComponent(
+        folderId as string,
+      )}/messages?${params}`
+    : `https://graph.microsoft.com/v1.0/me/messages?${params}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     throw new Error(`Graph /me/messages ${res.status}: ${detail.slice(0, 200)}`);

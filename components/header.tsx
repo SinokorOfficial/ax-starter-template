@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { Avatar } from "@/components/avatar";
 import { cn } from "@/lib/utils";
 import type { MeProfile, TeamsChat } from "@/lib/graph";
 
@@ -237,7 +238,6 @@ export function Header({ onMenu }: { onMenu: () => void }) {
   const email = profile?.mail ?? profile?.userPrincipalName ?? session?.user?.email ?? "";
   const deptTitle = [profile?.department, profile?.jobTitle].filter(Boolean).join(" · ");
   const roleLabel = role ? tr(role) : "";
-  const initial = name.charAt(0).toUpperCase() || "U";
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b bg-card px-4">
@@ -295,9 +295,12 @@ export function Header({ onMenu }: { onMenu: () => void }) {
           buttonClassName="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 hover:bg-accent"
           trigger={
             <>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                {initial}
-              </span>
+              <Avatar
+                name={name}
+                className="h-8 w-8 text-sm font-semibold"
+                initialsCount={1}
+                fallback="U"
+              />
               <span className="hidden text-sm font-medium sm:block">{name}</span>
             </>
           }

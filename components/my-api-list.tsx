@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingRow, ErrorState } from "@/components/page-header";
 
 interface ApiRow {
   OBJECT_ID?: string;
@@ -206,14 +207,9 @@ export function MyApiList() {
 
       {/* 결과 */}
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> {t("loading")}
-        </div>
+        <LoadingRow label={t("loading")} />
       ) : error ? (
-        <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-          <p className="text-muted-foreground">{error}</p>
-        </div>
+        <ErrorState icon message={error} />
       ) : groups && groups.length > 0 ? (
         <>
           <div className="mb-4 flex items-center gap-3">
@@ -431,10 +427,7 @@ function ApiTester({ group, onClose }: { group: ApiGroup; onClose: () => void })
           />
 
           {error ? (
-            <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-              <p className="text-muted-foreground">{error}</p>
-            </div>
+            <ErrorState icon message={error} className="p-3" />
           ) : result ? (
             <div className="rounded-lg border">
               <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2 text-sm">
