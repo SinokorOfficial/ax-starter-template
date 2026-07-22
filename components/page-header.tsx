@@ -12,10 +12,10 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="mb-3 flex items-start justify-between gap-4">
       {/* 제목 옆에 설명을 인라인 배치(설명이 화면을 덜 차지하도록) */}
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h1 className="shrink-0 text-2xl font-semibold tracking-tight">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        <h1 className="shrink-0 text-xl font-semibold tracking-tight">
           {title}
         </h1>
         {description && (
@@ -35,7 +35,7 @@ export function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center">
       <p className="font-medium">{title}</p>
       {description && (
         <p className="mt-1 max-w-md text-sm text-muted-foreground">

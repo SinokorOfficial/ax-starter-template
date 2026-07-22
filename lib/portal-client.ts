@@ -1,7 +1,7 @@
 // 브라우저용 BFF 호출 클라이언트 — M365(메일·일정). 클라이언트 컴포넌트 전용.
 // 브라우저는 Graph 를 직접 호출하지 않고, 항상 /api/me/* BFF 라우트를 거친다.
 
-import type { MailMessage, MailDetail, CalendarEvent } from "./types";
+import type { MailMessage, MailDetail, MailFolder, CalendarEvent } from "./types";
 
 async function asJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -15,9 +15,33 @@ async function asJson<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/** GET /api/me/messages → 본인 받은 메일 목록 */
-export async function fetchMyMessages(): Promise<MailMessage[]> {
-  const res = await fetch("/api/me/messages", { credentials: "same-origin" });
+/** GET /api/me/mailFolders → 본인 Outlook 메일 폴더 트리 */
+export async function fetchMailFolders(): Promise<MailFolder[]> {
+  const res = await fetch("/api/me/mailFolders", { credentials: "same-origin" });
+  const data = await asJson<{ folders: MailFolder[] }>(res);
+  return data.folders ?? [];
+}
+
+/** GET /api/me/mailFolders?parentId= → 특정 폴더의 하위 폴더(펼칠 때 lazy 로드) */
+export async function fetchChildFolders(
+  parentId: string,
+): Promise<MailFolder[]> {
+  const res = await fetch(
+    `/api/me/mailFolders?parentId=${encodeURIComponent(parentId)}`,
+    { credentials: "same-origin" },
+  );
+  const data = await asJson<{ folders: MailFolder[] }>(res);
+  return data.folders ?? [];
+}
+
+/** GET /api/me/messages → 본인 받은 메일 목록(폴더 지정 가능) */
+export async function fetchMyMessages(
+  folderId?: string,
+): Promise<MailMessage[]> {
+  const res = await fetch(
+    `/api/me/messages${folderId ? `?folderId=${encodeURIComponent(folderId)}` : ""}`,
+    { credentials: "same-origin" },
+  );
   const data = await asJson<{ messages: MailMessage[] }>(res);
   return data.messages;
 }
