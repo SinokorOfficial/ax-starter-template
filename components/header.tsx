@@ -130,6 +130,24 @@ const fab = (slug: string) => `${FAB}/${slug}_48x1.svg`;
 const fav = (domain: string) =>
   `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
 
+// 사내 서비스 — 사내망 도메인은 구글 파비콘 서비스가 접근 못하므로 사이트 아이콘을 직접 로드.
+const SINOKOR_APPS: LaunchApp[] = [
+  {
+    name: "G/W",
+    url: "https://skrgw.sinokor.co.kr/",
+    icon: "https://skrgw.sinokor.co.kr/ekp/service/file/fileView?fileUrl=/CSNKO/favicon/2023/01/12&fileName=8c5decaa-44cd-41d1-9c98-283705e7290e",
+    color: "#C8102E",
+    abbr: "GW",
+  },
+  {
+    name: "AI Portal",
+    url: "https://aiportal.sinokor.co.kr/",
+    icon: "https://aiportal.sinokor.co.kr/icon.svg",
+    color: "#2563EB",
+    abbr: "AX",
+  },
+];
+
 const M365_APPS: LaunchApp[] = [
   { name: "Outlook", url: "https://outlook.office.com/mail", icon: fab("outlook"), color: "#0F6CBD", abbr: "O" },
   { name: "Teams", url: "https://teams.microsoft.com", icon: fab("teams"), color: "#5059C9", abbr: "T" },
@@ -264,6 +282,13 @@ export function Header({ onMenu }: { onMenu: () => void }) {
           panelClassName="w-64 max-h-[80vh] overflow-y-auto p-2"
           trigger={<LayoutGrid className="h-4 w-4" />}
         >
+          <div className="px-1 py-1 text-sm font-medium">SINOKOR</div>
+          <div className="grid grid-cols-4 gap-0.5">
+            {SINOKOR_APPS.map((a) => (
+              <AppTile key={a.name} app={a} />
+            ))}
+          </div>
+          <div className="my-2 h-px bg-border" />
           <div className="px-1 py-1 text-sm font-medium">Microsoft 365</div>
           <div className="grid grid-cols-4 gap-0.5">
             {M365_APPS.map((a) => (
