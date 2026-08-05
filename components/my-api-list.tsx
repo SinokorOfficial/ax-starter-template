@@ -251,29 +251,26 @@ export function MyApiList() {
                 return (
                   <div
                     key={id}
-                    className="flex flex-col rounded-lg border bg-card p-4 text-card-foreground"
+                    className="flex flex-col rounded-lg border bg-card p-4 text-card-foreground transition-shadow hover:shadow-sm"
                   >
+                    {/* 상단: 타입 배지 + 복사(subtle) — 식별 정보만 */}
                     <div className="flex items-center justify-between gap-2">
                       <span className="rounded border px-1.5 py-0.5 text-xs text-muted-foreground">
                         {r.OBJECT_TP || "PROCEDURE"}
                       </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => copyApi(g, id)}
-                          title={t("copyForLlm")}
-                          className="flex h-7 w-7 items-center justify-center rounded-md border text-muted-foreground hover:bg-accent hover:text-foreground"
-                        >
-                          {copiedId === id ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                        <Button size="sm" className="h-7" onClick={() => setTestGroup(g)}>
-                          <Play className="h-3.5 w-3.5" /> {t("test")}
-                        </Button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyApi(g, id)}
+                        title={t("copyForLlm")}
+                        aria-label={t("copyForLlm")}
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        {copiedId === id ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
                     </div>
                     <h3 className="mt-2.5 line-clamp-2 text-sm font-semibold" title={objectDesc}>
                       {objectDesc}
@@ -284,11 +281,22 @@ export function MyApiList() {
                     {llmSynonym && (
                       <p className="line-clamp-1 text-xs text-muted-foreground">{llmSynonym}</p>
                     )}
-                    <div className="mt-3 border-t pt-2 text-xs text-muted-foreground">
-                      <div className="truncate">
+                    {/* 메타 — mt-auto 로 카드 하단 고정(카드 간 정렬) */}
+                    <div className="mt-auto pt-3 text-xs text-muted-foreground">
+                      <div className="truncate border-t pt-2">
                         {t("owner")}: {r.OWNER || "—"}
                       </div>
                       {path && <code className="mt-0.5 block truncate">{path}</code>}
+                    </div>
+                    {/* 하단 액션 footer — 카드마다 동일 위치·스타일 */}
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        className="flex-1 whitespace-nowrap"
+                        onClick={() => setTestGroup(g)}
+                      >
+                        <Play className="h-3.5 w-3.5" /> {t("test")}
+                      </Button>
                     </div>
                   </div>
                 );
