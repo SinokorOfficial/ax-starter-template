@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
+import type { ComponentType, ReactNode } from "react";
+import { Loader2, AlertCircle, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export function PageHeader({
   title,
@@ -12,7 +13,7 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-3 flex items-start justify-between gap-4">
+    <div className="mb-2 flex items-center justify-between gap-4">
       {/* 제목 옆에 설명을 인라인 배치(설명이 화면을 덜 차지하도록) */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <h1 className="shrink-0 text-xl font-semibold tracking-tight">
@@ -22,8 +23,33 @@ export function PageHeader({
           <p className="text-sm text-muted-foreground">{description}</p>
         )}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
+  );
+}
+
+/**
+ * 화면 주요 액션 버튼(공통) — 모든 페이지의 "새 …/등록" 버튼은 이걸로 통일.
+ * PageHeader 의 action 슬롯에 넣어 제목 우측에 일관 배치한다.
+ */
+export function PrimaryButton({
+  label,
+  onClick,
+  icon: Icon = Plus,
+  disabled,
+  type = "button",
+}: {
+  label: string;
+  onClick?: () => void;
+  icon?: ComponentType<{ className?: string }>;
+  disabled?: boolean;
+  type?: "button" | "submit";
+}) {
+  return (
+    <Button size="sm" onClick={onClick} disabled={disabled} type={type} className="gap-1.5">
+      <Icon className="h-4 w-4" />
+      {label}
+    </Button>
   );
 }
 

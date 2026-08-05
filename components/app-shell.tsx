@@ -12,7 +12,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <Header onMenu={() => setMobileOpen(true)} />
         {/* 본문만 스크롤(가로·세로). 사이드바·헤더는 고정. */}
-        <main className="flex-1 overflow-auto p-4">{children}</main>
+        <main className="flex-1 overflow-auto px-4 py-3">{children}</main>
       </div>
     </div>
   );

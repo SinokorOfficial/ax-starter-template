@@ -10,7 +10,7 @@ export default async function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
+        <div className="mb-5 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
             AX
           </div>
@@ -20,7 +20,7 @@ export default async function LoginPage() {
         <Suspense fallback={null}>
           <LoginForm />
         </Suspense>
-        <p className="mt-6 text-center text-xs text-muted-foreground">
+        <p className="mt-4 text-center text-xs text-muted-foreground">
           {t("footer.copyright")}
         </p>
       </div>

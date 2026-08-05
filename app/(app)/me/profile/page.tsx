@@ -101,7 +101,7 @@ export default function MyProfilePage() {
           </div>
 
           {/* 필드 그리드 */}
-          <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 border-t pt-6 sm:grid-cols-2">
+          <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 border-t pt-4 sm:grid-cols-2">
             {fields.map((f) => {
               const Icon = f.icon;
               return (
@@ -117,7 +117,7 @@ export default function MyProfilePage() {
           </dl>
 
           {/* 세션 / 신원 (토큰 제외) */}
-          <div className="mt-6 border-t pt-6">
+          <div className="mt-4 border-t pt-4">
             <div className="text-sm font-semibold">세션 / 신원</div>
             <p className="mt-0.5 text-xs text-muted-foreground">
               로그인 세션과 SSO 토큰의 신원값입니다. (토큰 원문은 표시하지 않습니다)
