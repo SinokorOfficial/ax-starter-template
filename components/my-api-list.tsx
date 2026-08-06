@@ -13,6 +13,7 @@ import {
   Play,
   Copy,
   Check,
+  Code2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,6 +112,121 @@ function buildCopyText(g: ApiGroup): string {
     .join("\n");
 }
 
+// API 사용법 모달 — POST /api/internal 호출법(요청 body·fetch 예제) 안내.
+function MyApiUsageDialog({ group, onClose }: { group: ApiGroup; onClose: () => void }) {
+  const r = group.api;
+  const title = r.LLM_SYNONYM || r.OBJECT_NM || "";
+  const desc = r.LLM_DESC || r.OBJECT_DESC || "";
+  const path = [r.PACKAGE_NM, r.OBJECT_NM].filter(Boolean).join(".");
+  const bodyJson = JSON.stringify(
+    {
+      user_name: r.OWNER || "API",
+      package_name: r.PACKAGE_NM || "",
+      procedure_name: r.OBJECT_NM || "",
+      params: group.params,
+    },
+    null,
+    2,
+  );
+  const fetchJs = `const res = await fetch("/api/internal", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "same-origin", // 로그인 세션(SSO) 자동 전송 — 키 불필요
+  body: JSON.stringify(BODY),
+});
+const { data } = await res.json(); // data = 결과 행 배열`;
+
+  const [copiedAll, setCopiedAll] = useState(false);
+  const copyAll = async () => {
+    try {
+      await navigator.clipboard.writeText(buildCopyText(group));
+      setCopiedAll(true);
+      setTimeout(() => setCopiedAll(false), 1500);
+    } catch {
+      /* 무시 */
+    }
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-card shadow-xl"
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">{title} — API 사용 방법</div>
+            <code className="text-xs text-muted-foreground">POST /api/internal · {path}</code>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+            aria-label="닫기"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex-1 space-y-4 overflow-auto p-4 text-sm">
+          {desc && <p className="text-muted-foreground">{desc}</p>}
+          <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
+            브라우저에서 <code>POST /api/internal</code> 로 호출합니다. 로그인 세션(SSO)이 자동
+            인증되어 <strong className="text-foreground">키가 필요 없습니다</strong>. 사용자
+            신원(oid·upn·email)은 서버가 토큰에서 주입하니 <code>params</code> 에 넣지 마세요.
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">요청 body (JSON)</p>
+            <pre className="overflow-auto rounded-md bg-muted p-3 text-xs">
+              <code>{bodyJson}</code>
+            </pre>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">fetch 예제</p>
+            <pre className="overflow-auto rounded-md bg-muted p-3 text-xs">
+              <code>{fetchJs}</code>
+            </pre>
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-t px-4 py-2.5">
+          <button
+            type="button"
+            onClick={copyAll}
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            {copiedAll ? (
+              <>
+                <Check className="h-3.5 w-3.5" /> 복사됨
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5" /> LLM용 전체 복사
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MyApiList() {
   const t = useTranslations("myApi");
   const { data: session } = useSession();
@@ -121,6 +237,7 @@ export function MyApiList() {
   const [groups, setGroups] = useState<ApiGroup[] | null>(null);
   const [q, setQ] = useState("");
   const [testGroup, setTestGroup] = useState<ApiGroup | null>(null);
+  const [usageGroup, setUsageGroup] = useState<ApiGroup | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const copyApi = async (g: ApiGroup, id: string) => {
@@ -291,6 +408,14 @@ export function MyApiList() {
                     {/* 하단 액션 footer — 카드마다 동일 위치·스타일 */}
                     <div className="mt-3 flex items-center gap-1.5">
                       <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 whitespace-nowrap"
+                        onClick={() => setUsageGroup(g)}
+                      >
+                        <Code2 className="h-3.5 w-3.5" /> 사용법
+                      </Button>
+                      <Button
                         size="sm"
                         className="flex-1 whitespace-nowrap"
                         onClick={() => setTestGroup(g)}
@@ -316,6 +441,9 @@ export function MyApiList() {
 
       {testGroup && (
         <ApiTester group={testGroup} onClose={() => setTestGroup(null)} />
+      )}
+      {usageGroup && (
+        <MyApiUsageDialog group={usageGroup} onClose={() => setUsageGroup(null)} />
       )}
     </div>
   );
